@@ -1,38 +1,51 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 
-import { IconeAlerta, IconeLupa, Radio } from '@/components/Icones';
-import { Botao, LinkVoltar, Papel, PistaLupa, Tela } from '@/components/ui';
-import { ESCOLHAS } from '@/game/conteudo';
+import { Acerto, ListaOpcoes, Lupa, useOpcoesEmbaralhadas } from '@/components/atividade';
+import { IconeAlerta } from '@/components/Icones';
+import { Botao, LinkVoltar, Tela } from '@/components/ui';
+import { ESCOLHAS, FINAIS } from '@/game/conteudo/atividades';
 import { rotuloHud, useJogo } from '@/game/estado';
+import type { Escolha } from '@/game/tipos';
 import { cor, MARGEM, tipo } from '@/theme';
 
 /**
- * Tela de escolha única (radio + lupa). Serve para a senha de terça, o
- * pendrive de quarta, o backup de quinta e o incidente de sexta (08 no Figma).
+ * Escolha única (radio + lupa): senha, pendrive, Wi-Fi, porta restrita...
+ * e os incidentes de sexta (08 no Figma).
  */
 export default function EscolhaTela() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const escolha = [...ESCOLHAS, ...FINAIS].find((e) => e.id === id);
+  if (!escolha) return <Redirect href="/briefing" />;
+  return <Conteudo escolha={escolha} />;
+}
+
+function Conteudo({ escolha }: { escolha: Escolha }) {
   const { estado, despachar } = useJogo();
+  const opcoes = useOpcoesEmbaralhadas(escolha.opcoes, escolha.ordemFixa);
   const [marcada, setMarcada] = useState<string | null>(null);
   const [lupa, setLupa] = useState(false);
-
-  const escolha = ESCOLHAS.find((e) => e.id === id);
-  if (!escolha) return <Redirect href="/briefing" />;
-
-  const selecionada = escolha.opcoes.find((o) => o.id === marcada);
-  const jaFeita = estado.escolhas[escolha.id];
+  const chave = `escolha:${escolha.id}`;
+  const feita = estado.concluidas.includes(chave);
+  const selecionada = opcoes.find((o) => o.id === marcada);
 
   const confirmar = () => {
     if (!selecionada) return;
-    despachar({ tipo: 'escolher', escolhaId: escolha.id, opcaoId: selecionada.id });
-    if (selecionada.falha) router.replace('/desligado');
-    else if (escolha.final) router.replace('/concluido');
-    else router.replace('/briefing');
+    if (selecionada.falha) {
+      despachar({ tipo: 'falhar', falha: selecionada.falha });
+      router.replace('/desligado');
+      return;
+    }
+    despachar({ tipo: 'concluirAtividade', chave });
+    if (escolha.final) router.replace('/concluido');
   };
 
-  const alternarLupa = () => setLupa((v) => !v);
+  const rotulo = selecionada
+    ? typeof escolha.rotuloBotao === 'string'
+      ? escolha.rotuloBotao
+      : escolha.rotuloBotao(selecionada)
+    : 'Escolha uma opção';
 
   return (
     <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
@@ -55,56 +68,22 @@ export default function EscolhaTela() {
         <View style={{ flex: 1, gap: 14, paddingHorizontal: MARGEM }}>
           <Text style={[tipo.corpo, { color: cor.formulario }]}>{escolha.enunciado}</Text>
 
-          <Papel style={{ overflow: 'hidden' }}>
-            {escolha.opcoes.map((o) => {
-              const ativa = o.id === (jaFeita ?? marcada);
-              return (
-                <Pressable
-                  key={o.id}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: ativa, disabled: !!jaFeita }}
-                  disabled={!!jaFeita}
-                  onPress={() => setMarcada(o.id)}
-                  onLongPress={alternarLupa}
-                  delayLongPress={350}
-                  style={[
-                    estilos.opcao,
-                    ativa && { backgroundColor: cor.branco, borderLeftWidth: 4, borderLeftColor: cor.tinta },
-                  ]}
-                >
-                  <Radio marcado={ativa} />
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={[tipo.corpoDestaque, { color: o.perigo ? cor.carimboVermelho : cor.tinta }]}>{o.titulo}</Text>
-                    <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{o.detalhe}</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </Papel>
+          <ListaOpcoes
+            opcoes={opcoes}
+            marcada={marcada}
+            onMarcar={setMarcada}
+            onLupa={() => setLupa((v) => !v)}
+            desabilitada={feita}
+          />
 
-          {lupa ? (
-            <Pressable onPress={alternarLupa}>
-              <PistaLupa rotacao={1} texto={escolha.pista} />
-            </Pressable>
+          {feita ? (
+            <Acerto explicacao={escolha.pista} />
           ) : (
-            <Pressable onPress={alternarLupa} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <IconeLupa />
-              <Text style={[tipo.pequeno, { color: cor.formulario, flex: 1 }]}>
-                Toque e segure uma opção para usar a lupa.
-              </Text>
-            </Pressable>
-          )}
-
-          <View style={{ flexGrow: 1, minHeight: 16 }} />
-
-          {jaFeita ? (
-            <Botao titulo="Voltar ao memorando" onPress={() => router.replace('/briefing')} />
-          ) : (
-            <Botao
-              titulo={selecionada ? escolha.rotuloBotao(selecionada) : 'Escolha uma opção'}
-              desabilitado={!selecionada}
-              onPress={confirmar}
-            />
+            <>
+              <Lupa ativa={lupa} pista={escolha.pista} onAlternar={() => setLupa((v) => !v)} dica="Toque e segure uma opção para usar a lupa." />
+              <View style={{ flexGrow: 1, minHeight: 16 }} />
+              <Botao titulo={rotulo} desabilitado={!selecionada} onPress={confirmar} />
+            </>
           )}
         </View>
       </ScrollView>
@@ -114,13 +93,4 @@ export default function EscolhaTela() {
 
 const estilos = StyleSheet.create({
   alerta: { backgroundColor: cor.carimboVermelho, paddingHorizontal: MARGEM, paddingTop: 18, paddingBottom: 20, gap: 8 },
-  opcao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: cor.linha,
-  },
 });

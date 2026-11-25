@@ -7,7 +7,7 @@ import { cor, tipo } from '@/theme';
 
 /** 09 Semana concluída */
 export default function Concluido() {
-  const { estado } = useJogo();
+  const { estado, iniciarSemana } = useJogo();
   if (!estado.concluido) return <Redirect href="/" />;
 
   const stats = [
@@ -28,7 +28,8 @@ export default function Concluido() {
         <View style={{ gap: 12 }}>
           <Text style={[tipo.displayG, { color: cor.formulario }]}>Semana{'\n'}concluída.{'\n'}Nenhum erro.</Text>
           <Text style={[tipo.corpo, { color: cor.formulario }]}>
-            O RH trocou seu crachá provisório pelo definitivo. Você terminou a semana com o sistema da UnB Net inteiro.
+            O RH trocou seu crachá provisório pelo definitivo. Você terminou a semana {estado.semana} com o sistema da UnB
+            Net inteiro. Na próxima semana, os golpes serão outros.
           </Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {stats.map((s) => (
@@ -44,8 +45,11 @@ export default function Concluido() {
           <Botao titulo="Ver o manual completo" onPress={() => router.push('/manual?modo=leitura')} />
           <Botao
             tipo="secundario"
-            titulo="Jogar de novo"
-            onPress={() => router.replace('/')}
+            titulo="Começar uma nova semana"
+            onPress={() => {
+              iniciarSemana();
+              router.replace('/briefing');
+            }}
           />
         </View>
       </ScrollView>

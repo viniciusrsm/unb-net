@@ -3,8 +3,8 @@ import { router } from 'expo-router';
 
 import { IconeLupa } from '@/components/Icones';
 import { Botao, Papel, Tela } from '@/components/ui';
-import { emailsDoDia, type Email } from '@/game/conteudo';
-import { emailsResolvidos, naoLidos, proximaTarefa, rotuloHud, useJogo, type Decisao } from '@/game/estado';
+import { emailsDoDia, emailsResolvidos, naoLidos, proximaTarefa, rotuloHud, useJogo, type Decisao } from '@/game/estado';
+import type { Email } from '@/game/tipos';
 import { cor, MARGEM, tipo } from '@/theme';
 
 /** 03 Caixa de entrada */
@@ -13,8 +13,8 @@ export default function Caixa() {
   const pendentes = naoLidos(estado);
   const proxima = proximaTarefa(estado);
 
-  // Ordem do Figma: não lidos primeiro (mais recentes em cima), depois os já lidos.
-  const lista = [...emailsDoDia(estado.dia)].sort((a, b) => Number(!!a.jaLido) - Number(!!b.jaLido));
+  // Não lidos primeiro (mais recentes em cima), depois os já lidos — o gerador já entrega nessa ordem.
+  const lista = emailsDoDia(estado);
 
   const abrir = (email: Email, lupa = false) =>
     router.push({ pathname: '/email/[id]', params: lupa ? { id: email.id, lupa: '1' } : { id: email.id } });
@@ -28,6 +28,10 @@ export default function Caixa() {
             {pendentes > 0 ? `${pendentes} não lida${pendentes > 1 ? 's' : ''}` : 'tudo lido'}
           </Text>
         </View>
+
+        {lista.length === 0 ? (
+          <Text style={[tipo.corpo, { color: cor.linha }]}>Nenhuma mensagem nova hoje.</Text>
+        ) : null}
 
         <Papel style={{ overflow: 'hidden' }}>
           {lista.map((email) => (
@@ -49,7 +53,7 @@ export default function Caixa() {
           </Text>
         </View>
 
-        {emailsResolvidos(estado) ? (
+        {emailsResolvidos(estado) && lista.length > 0 ? (
           <View style={{ gap: 12, marginTop: 8 }}>
             <Text style={[tipo.pequenoDestaque, { color: cor.marcaTexto }]}>
               {proxima ? 'Caixa resolvida. Ainda falta uma tarefa hoje.' : 'Todas as tarefas de hoje estão feitas.'}

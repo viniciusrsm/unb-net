@@ -7,7 +7,7 @@ import { cor, tipo } from '@/theme';
 
 /** 01 Início */
 export default function Inicio() {
-  const { despachar } = useJogo();
+  const { iniciarSemana } = useJogo();
 
   return (
     <Tela>
@@ -39,7 +39,7 @@ export default function Inicio() {
           <Botao
             titulo="Começar segunda-feira"
             onPress={() => {
-              despachar({ tipo: 'iniciar' });
+              iniciarSemana();
               router.replace('/briefing');
             }}
           />
