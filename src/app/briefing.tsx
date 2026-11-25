@@ -1,36 +1,26 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 
 import { Botao, Papel, Tela } from '@/components/ui';
 import {
-  ABREV_DIA,
-  DIAS,
-  DIAS_INFO,
-  ESCOLHAS,
-  LOJAS,
-  NOME_DIA,
-  capitalizar,
-  emailsDoDia,
-  indiceDia,
-  type Tarefa,
-} from '@/game/conteudo';
-import { diaConcluido, proximaTarefa, relogio, rotuloHud, tarefaFeita, useJogo, type Estado } from '@/game/estado';
+  descreverTarefa,
+  diaConcluido,
+  planoAtual,
+  proximaTarefa,
+  relogio,
+  rotuloHud,
+  tarefaFeita,
+  useJogo,
+} from '@/game/estado';
+import { ABREV_DIA, DIAS, INICIO_DIA, NOME_DIA, capitalizar, chaveAtividade, indiceDia } from '@/game/tipos';
 import { cor, MARGEM, tipo } from '@/theme';
-
-function descrever(estado: Estado, t: Tarefa) {
-  if (t.tipo === 'caixa') {
-    const n = emailsDoDia(estado.dia).length;
-    return { titulo: 'Ler a caixa de entrada', detalhe: `${n} mensage${n === 1 ? 'm' : 'ns'}` };
-  }
-  if (t.tipo === 'compra') return { titulo: 'Comprar 2 monitores', detalhe: `${LOJAS.length} lojas indicadas` };
-  const e = ESCOLHAS.find((x) => x.id === t.id);
-  return { titulo: e?.tarefa ?? '', detalhe: e?.detalheTarefa ?? '' };
-}
 
 /** 02 Briefing do dia */
 export default function Briefing() {
-  const { estado, despachar } = useJogo();
-  const info = DIAS_INFO[estado.dia];
+  const { estado, avancarDia } = useJogo();
+  const plano = planoAtual(estado);
+  if (!plano) return <Redirect href="/" />;
+
   const idx = indiceDia(estado.dia);
   const feito = diaConcluido(estado);
   const proxima = proximaTarefa(estado);
@@ -40,7 +30,7 @@ export default function Briefing() {
     : {
         titulo: `Encerrar ${NOME_DIA[estado.dia]}`,
         onPress: () => {
-          despachar({ tipo: 'avancarDia' });
+          avancarDia();
           router.replace('/briefing');
         },
       };
@@ -49,7 +39,9 @@ export default function Briefing() {
     <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
       <ScrollView contentContainerStyle={estilos.conteudo}>
         <View style={{ gap: 6 }}>
-          <Text style={[tipo.pequenoDestaque, { color: cor.marcaTexto }]}>Dia {idx + 1} de 5</Text>
+          <Text style={[tipo.pequenoDestaque, { color: cor.marcaTexto }]}>
+            Semana {estado.semana} · Dia {idx + 1} de 5
+          </Text>
           <Text style={[tipo.displayG, { color: cor.formulario }]}>{capitalizar(NOME_DIA[estado.dia])}</Text>
         </View>
 
@@ -76,15 +68,17 @@ export default function Briefing() {
         <Papel style={estilos.memo}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Text style={[tipo.pequenoDestaque, { color: cor.texto2, flex: 1 }]}>Memorando do RH</Text>
-            <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{relogio(info.inicio)}</Text>
+            <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{relogio(INICIO_DIA[estado.dia])}</Text>
           </View>
-          <Text style={[tipo.corpo, { color: cor.tinta }]}>{feito && info.memorandoFeito ? info.memorandoFeito : info.memorando}</Text>
+          <Text style={[tipo.corpo, { color: cor.tinta }]}>
+            {feito ? 'Todas as tarefas de hoje foram feitas sem cair em nenhum golpe. Pode encerrar o dia.' : plano.intro}
+          </Text>
           <View>
-            {info.tarefas.map((t) => {
-              const { titulo, detalhe } = descrever(estado, t);
-              const ok = tarefaFeita(estado, t);
+            {plano.atividades.map((a) => {
+              const { titulo, detalhe } = descreverTarefa(estado, a);
+              const ok = tarefaFeita(estado, a);
               return (
-                <View key={titulo} style={estilos.tarefa}>
+                <View key={chaveAtividade(a)} style={estilos.tarefa}>
                   <View style={[estilos.check, ok && { backgroundColor: cor.tinta }]}>
                     {ok ? <Text style={estilos.checkMarca}>✓</Text> : null}
                   </View>

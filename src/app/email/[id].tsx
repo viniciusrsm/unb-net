@@ -5,8 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconeArquivo, IconeLupa } from '@/components/Icones';
 import { Botao, Carimbo, CarimboAnimado, LinkVoltar, MarcaTexto, Papel, PistaLupa, Tela } from '@/components/ui';
-import { EMAILS } from '@/game/conteudo';
-import { rotuloHud, useJogo, type Decisao } from '@/game/estado';
+import { emailsDoDia, rotuloHud, useJogo, type Decisao } from '@/game/estado';
 import { cor, MARGEM, tipo } from '@/theme';
 
 /** 04 E-mail */
@@ -17,7 +16,7 @@ export default function EmailTela() {
   const [carimbando, setCarimbando] = useState<Decisao | null>(null);
   const { bottom } = useSafeAreaInsets();
 
-  const email = EMAILS.find((e) => e.id === id);
+  const email = emailsDoDia(estado).find((e) => e.id === id);
 
   useEffect(() => {
     if (email) despachar({ tipo: 'abrirEmail', id: email.id });
@@ -27,8 +26,8 @@ export default function EmailTela() {
 
   const aoTerminarCarimbo = useCallback(() => {
     if (!email || !carimbando) return;
-    const falha = carimbando === 'confiar' ? email.falhaSeConfiar : email.falhaSeDenunciar;
-    if (falha) router.replace('/desligado');
+    const falhou = carimbando === 'confiar' ? !!email.golpe : !email.golpe;
+    if (falhou) router.replace('/desligado');
     else if (carimbando === 'confiar' && email.destinoAoConfiar) router.replace(email.destinoAoConfiar);
     else router.back();
   }, [email, carimbando]);

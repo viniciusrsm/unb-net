@@ -4,8 +4,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 import { IconeCadeado } from '@/components/Icones';
 import { ItemLista, LinkVoltar, Papel, Tela } from '@/components/ui';
-import { NOME_DIA, VERBETES, indiceDia, type VerbeteId } from '@/game/conteudo';
-import { rotuloHud, useJogo } from '@/game/estado';
+import { VERBETES } from '@/game/conteudo/verbetes';
+import { rotuloHud, temasLiberados, useJogo } from '@/game/estado';
+import { NOME_DIA, type VerbeteId } from '@/game/tipos';
 import { cor, MARGEM, tipo } from '@/theme';
 
 /** 07 Manual */
@@ -14,13 +15,10 @@ export default function Manual() {
   const { estado, despachar } = useJogo();
   const leitura = modo === 'leitura' || !estado.iniciado;
 
-  const liberado = (id: VerbeteId) => {
-    const v = VERBETES.find((x) => x.id === id);
-    if (!v) return false;
-    // Fora do jogo (início, fim, derrota) o manual fica todo aberto para consulta.
-    if (leitura) return true;
-    return indiceDia(v.liberadoEm) <= indiceDia(estado.dia);
-  };
+  // Durante a semana, cada verbete libera quando o tema aparece num dia.
+  // Fora do jogo (início, fim, derrota) o manual fica todo aberto para consulta.
+  const liberados = temasLiberados(estado);
+  const liberado = (id: VerbeteId) => leitura || liberados.has(id);
 
   const [atual, setAtual] = useState<VerbeteId>(inicial && liberado(inicial) ? inicial : 'phishing');
   const verbete = VERBETES.find((v) => v.id === atual) ?? VERBETES[0];
@@ -43,6 +41,7 @@ export default function Manual() {
             const ativo = v.id === atual;
             const aberto = liberado(v.id);
             return (
+              // Verbetes bloqueados mostram o cadeado: liberam quando o tema aparecer na semana.
               <Pressable
                 key={v.id}
                 accessibilityRole="tab"
@@ -62,7 +61,11 @@ export default function Manual() {
 
         <View style={{ paddingHorizontal: MARGEM, gap: 14, flex: 1 }}>
           <View style={{ gap: 2 }}>
-            <Text style={[tipo.pequeno, { color: cor.linha }]}>Verbete liberado na {NOME_DIA[verbete.liberadoEm]}</Text>
+            <Text style={[tipo.pequeno, { color: cor.linha }]}>
+              {!leitura && liberados.get(verbete.id)
+                ? `Verbete liberado na ${NOME_DIA[liberados.get(verbete.id)!]}`
+                : 'Verbete do manual de segurança'}
+            </Text>
             <Text style={[tipo.displayG, { color: cor.formulario }]}>{verbete.titulo}</Text>
           </View>
 

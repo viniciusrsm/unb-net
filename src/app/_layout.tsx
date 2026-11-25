@@ -36,6 +36,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="email/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="ligacao/[id]" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="desligado" options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
         <Stack.Screen name="concluido" options={{ gestureEnabled: false }} />
       </Stack>
