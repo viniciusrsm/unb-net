@@ -3,17 +3,18 @@ import { router } from 'expo-router';
 
 import { IconeLupa } from '@/components/Icones';
 import { Botao, Papel, Tela } from '@/components/ui';
-import { EMAILS, type Email } from '@/game/conteudo';
-import { emailsResolvidos, naoLidos, rotuloHud, segundaConcluida, useJogo, type Decisao } from '@/game/estado';
+import { emailsDoDia, type Email } from '@/game/conteudo';
+import { emailsResolvidos, naoLidos, proximaTarefa, rotuloHud, useJogo, type Decisao } from '@/game/estado';
 import { cor, MARGEM, tipo } from '@/theme';
 
 /** 03 Caixa de entrada */
 export default function Caixa() {
   const { estado } = useJogo();
   const pendentes = naoLidos(estado);
+  const proxima = proximaTarefa(estado);
 
   // Ordem do Figma: não lidos primeiro (mais recentes em cima), depois os já lidos.
-  const lista = [...EMAILS].sort((a, b) => Number(!!a.jaLido) - Number(!!b.jaLido));
+  const lista = [...emailsDoDia(estado.dia)].sort((a, b) => Number(!!a.jaLido) - Number(!!b.jaLido));
 
   const abrir = (email: Email, lupa = false) =>
     router.push({ pathname: '/email/[id]', params: lupa ? { id: email.id, lupa: '1' } : { id: email.id } });
@@ -48,15 +49,15 @@ export default function Caixa() {
           </Text>
         </View>
 
-        {estado.dia === 'seg' && emailsResolvidos(estado) ? (
+        {emailsResolvidos(estado) ? (
           <View style={{ gap: 12, marginTop: 8 }}>
             <Text style={[tipo.pequenoDestaque, { color: cor.marcaTexto }]}>
-              {segundaConcluida(estado) ? 'Todas as tarefas de hoje estão feitas.' : 'Caixa resolvida. Falta a compra dos monitores.'}
+              {proxima ? 'Caixa resolvida. Ainda falta uma tarefa hoje.' : 'Todas as tarefas de hoje estão feitas.'}
             </Text>
-            {segundaConcluida(estado) ? (
-              <Botao titulo="Voltar ao memorando" onPress={() => router.replace('/briefing')} />
+            {proxima ? (
+              <Botao titulo={proxima.rotulo} onPress={() => router.replace(proxima.rota)} />
             ) : (
-              <Botao titulo="Abrir o navegador" onPress={() => router.replace('/navegador')} />
+              <Botao titulo="Voltar ao memorando" onPress={() => router.replace('/briefing')} />
             )}
           </View>
         ) : null}

@@ -3,7 +3,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 
 import { Botao, Carimbo, ItemLista, Papel, Tela } from '@/components/ui';
-import { FALHAS, VERBETES } from '@/game/conteudo';
+import { FALHAS, NOME_DIA, VERBETES } from '@/game/conteudo';
 import { rotuloHud, useJogo } from '@/game/estado';
 import { cor, MARGEM, tipo } from '@/theme';
 
@@ -26,7 +26,7 @@ export default function Desligado() {
             <Text style={[tipo.pequenoDestaque, { color: cor.texto2, flex: 1 }]}>Comunicado do RH</Text>
             <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{falha.hora}</Text>
           </View>
-          <Text style={[tipo.titulo, { color: cor.tinta }]}>{falha.titulo}</Text>
+          <Text style={[tipo.titulo, { color: cor.tinta }]}>Você foi demitido na {NOME_DIA[falha.dia]}</Text>
           <Text style={[tipo.corpo, { color: cor.tinta }]}>{falha.texto}</Text>
           <View style={{ height: 78, alignItems: 'flex-end', justifyContent: 'center' }}>
             <View style={{ transform: [{ rotate: '-6deg' }, { scale: 0.62 }], marginRight: -40 }}>
@@ -50,10 +50,10 @@ export default function Desligado() {
         />
         <Botao
           tipo="secundario"
-          titulo={`Repetir ${falha.dia === 'seg' ? 'segunda-feira' : 'sexta-feira'}`}
+          titulo={`Repetir ${NOME_DIA[falha.dia]}`}
           onPress={() => {
             despachar({ tipo: 'repetirDia' });
-            router.replace(falha.dia === 'seg' ? '/briefing' : '/incidente');
+            router.replace('/briefing');
           }}
         />
       </ScrollView>
