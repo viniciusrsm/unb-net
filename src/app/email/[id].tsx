@@ -29,7 +29,7 @@ export default function EmailTela() {
     if (!email || !carimbando) return;
     const falha = carimbando === 'confiar' ? email.falhaSeConfiar : email.falhaSeDenunciar;
     if (falha) router.replace('/desligado');
-    else if (email.id === 'marina' && carimbando === 'confiar') router.replace('/navegador');
+    else if (carimbando === 'confiar' && email.destinoAoConfiar) router.replace(email.destinoAoConfiar);
     else router.back();
   }, [email, carimbando]);
 
@@ -56,7 +56,7 @@ export default function EmailTela() {
         <Text style={[tipo.pequenoDestaque, { color: cor.formulario, flex: 1 }]}>O que você faz com este e-mail?</Text>
         <Text style={[tipo.pequeno, { color: cor.marcaTexto }]}>1 chance</Text>
       </View>
-      <Botao tipo="perigo" titulo="Denunciar como golpe" onPress={() => decidir('denunciar')} />
+      <Botao tipo="perigo" titulo={email.acaoDenunciar ?? 'Denunciar como golpe'} onPress={() => decidir('denunciar')} />
       <Botao tipo="secundario" titulo={email.acaoConfiar ?? 'Confiar'} onPress={() => decidir('confiar')} />
     </View>
   ) : null;

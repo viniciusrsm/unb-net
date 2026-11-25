@@ -1,13 +1,18 @@
 import { createContext, useContext, useMemo, useReducer, type ReactNode } from 'react';
+import type { Href } from 'expo-router';
 
 import {
-  BACKUPS,
+  ABREV_DIA,
+  DIAS,
+  DIAS_INFO,
   EMAILS,
-  EMAILS_PENDENTES,
+  ESCOLHAS,
   FALHAS,
   LOJAS,
+  emailsDoDia,
+  pendentesDoDia,
   type Dia,
-  type FalhaId,
+  type Tarefa,
   type VerbeteId,
 } from './conteudo';
 
@@ -21,10 +26,11 @@ export type Estado = {
   emailsAbertos: string[];
   decisoes: Record<string, Decisao>;
   compra: string | null;
-  backup: string | null;
+  /** Opção escolhida em cada tela de escolha. */
+  escolhas: Record<string, string>;
   verbetesLidos: VerbeteId[];
   totalDecisoes: number;
-  falha: FalhaId | null;
+  falha: string | null;
   concluido: boolean;
 };
 
@@ -33,27 +39,27 @@ type Acao =
   | { tipo: 'abrirEmail'; id: string }
   | { tipo: 'decidirEmail'; id: string; decisao: Decisao }
   | { tipo: 'comprar'; lojaId: string }
-  | { tipo: 'avancarParaSexta' }
-  | { tipo: 'restaurar'; backupId: string }
+  | { tipo: 'escolher'; escolhaId: string; opcaoId: string }
+  | { tipo: 'avancarDia' }
   | { tipo: 'lerVerbete'; id: VerbeteId }
-  | { tipo: 'passarTempo'; minutos: number }
   | { tipo: 'repetirDia' };
-
-const INICIO_DO_DIA: Record<Dia, number> = { seg: 8 * 60 + 30, sex: 16 * 60 + 40 };
 
 export const estadoInicial: Estado = {
   iniciado: false,
   dia: 'seg',
-  minutos: INICIO_DO_DIA.seg,
+  minutos: DIAS_INFO.seg.inicio,
   emailsAbertos: [],
   decisoes: {},
   compra: null,
-  backup: null,
+  escolhas: {},
   verbetesLidos: [],
   totalDecisoes: 0,
   falha: null,
   concluido: false,
 };
+
+const semChaves = <T,>(obj: Record<string, T>, chaves: string[]) =>
+  Object.fromEntries(Object.entries(obj).filter(([k]) => !chaves.includes(k)));
 
 function reducer(estado: Estado, acao: Acao): Estado {
   switch (acao.tipo) {
@@ -89,34 +95,45 @@ function reducer(estado: Estado, acao: Acao): Estado {
       };
     }
 
-    case 'avancarParaSexta':
-      return { ...estado, dia: 'sex', minutos: INICIO_DO_DIA.sex };
-
-    case 'restaurar': {
-      const backup = BACKUPS.find((b) => b.id === acao.backupId);
-      if (!backup) return estado;
+    case 'escolher': {
+      const escolha = ESCOLHAS.find((e) => e.id === acao.escolhaId);
+      const opcao = escolha?.opcoes.find((o) => o.id === acao.opcaoId);
+      if (!escolha || !opcao || estado.escolhas[escolha.id]) return estado;
       return {
         ...estado,
-        backup: backup.id,
+        escolhas: opcao.falha ? estado.escolhas : { ...estado.escolhas, [escolha.id]: opcao.id },
         totalDecisoes: estado.totalDecisoes + 1,
         minutos: estado.minutos + 5,
-        falha: backup.falha ?? null,
-        concluido: !backup.falha,
+        falha: opcao.falha ?? null,
+        concluido: !opcao.falha && !!escolha.final,
       };
+    }
+
+    case 'avancarDia': {
+      const proximo = DIAS[DIAS.indexOf(estado.dia) + 1];
+      if (!proximo) return estado;
+      return { ...estado, dia: proximo, minutos: DIAS_INFO[proximo].inicio };
     }
 
     case 'lerVerbete':
       if (estado.verbetesLidos.includes(acao.id)) return estado;
       return { ...estado, verbetesLidos: [...estado.verbetesLidos, acao.id] };
 
-    case 'passarTempo':
-      return { ...estado, minutos: estado.minutos + acao.minutos };
-
     case 'repetirDia': {
       const dia = estado.falha ? FALHAS[estado.falha].dia : estado.dia;
-      const base = { ...estado, dia, falha: null, minutos: INICIO_DO_DIA[dia] };
-      if (dia === 'seg') return { ...base, emailsAbertos: [], decisoes: {}, compra: null };
-      return { ...base, backup: null, concluido: false };
+      const emails = emailsDoDia(dia).map((e) => e.id);
+      const escolhas = ESCOLHAS.filter((e) => e.dia === dia).map((e) => e.id);
+      return {
+        ...estado,
+        dia,
+        falha: null,
+        concluido: false,
+        minutos: DIAS_INFO[dia].inicio,
+        emailsAbertos: estado.emailsAbertos.filter((id) => !emails.includes(id)),
+        decisoes: semChaves(estado.decisoes, emails),
+        escolhas: semChaves(estado.escolhas, escolhas),
+        compra: dia === 'seg' ? null : estado.compra,
+      };
     }
   }
 }
@@ -149,17 +166,41 @@ export function relogio(minutos: number) {
 }
 
 export function rotuloHud(dia: Dia, minutos: number) {
-  return `${dia === 'seg' ? 'Seg' : 'Sex'}, ${relogio(minutos)}`;
+  return `${ABREV_DIA[dia]}, ${relogio(minutos)}`;
 }
 
-export function emailsResolvidos(estado: Estado) {
-  return EMAILS_PENDENTES.every((id) => estado.decisoes[id]);
+export function emailsResolvidos(estado: Estado, dia: Dia = estado.dia) {
+  return pendentesDoDia(dia).every((e) => estado.decisoes[e.id]);
 }
 
-export function segundaConcluida(estado: Estado) {
-  return emailsResolvidos(estado) && estado.compra !== null;
+export function tarefaFeita(estado: Estado, tarefa: Tarefa) {
+  switch (tarefa.tipo) {
+    case 'caixa':
+      return emailsResolvidos(estado);
+    case 'compra':
+      return estado.compra !== null;
+    case 'escolha':
+      return !!estado.escolhas[tarefa.id];
+  }
+}
+
+export function diaConcluido(estado: Estado) {
+  return DIAS_INFO[estado.dia].tarefas.every((t) => tarefaFeita(estado, t));
+}
+
+/** Rota da próxima tarefa pendente do dia, ou null se o dia acabou. */
+export function proximaTarefa(estado: Estado): { rota: Href; rotulo: string } | null {
+  const t = DIAS_INFO[estado.dia].tarefas.find((x) => !tarefaFeita(estado, x));
+  if (!t) return null;
+  if (t.tipo === 'caixa') return { rota: '/caixa', rotulo: 'Abrir a caixa de entrada' };
+  if (t.tipo === 'compra') return { rota: '/navegador', rotulo: 'Abrir o navegador' };
+  const escolha = ESCOLHAS.find((e) => e.id === t.id);
+  return {
+    rota: { pathname: '/escolha/[id]', params: { id: t.id } },
+    rotulo: escolha?.alerta ? 'Ir para a sala da TI' : (escolha?.tarefa ?? 'Continuar'),
+  };
 }
 
 export function naoLidos(estado: Estado) {
-  return EMAILS.filter((e) => !e.jaLido && !estado.emailsAbertos.includes(e.id)).length;
+  return pendentesDoDia(estado.dia).filter((e) => !estado.emailsAbertos.includes(e.id)).length;
 }

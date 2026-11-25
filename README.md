@@ -13,7 +13,7 @@ npx expo start --web  # ou rode no navegador
 
 ## Estrutura
 
-- `src/app/` — telas (Expo Router): início, briefing, caixa, email/[id], navegador, manual, incidente, desligado, concluido
+- `src/app/` — telas (Expo Router): início, briefing, caixa, email/[id], navegador, manual, escolha/[id] (senha, pendrive, backup, incidente), desligado, concluido
 - `src/components/` — componentes do Figma (Botão, HUD, Barra de abas, Crachá, Carimbo, Lupa) e ícones
 - `src/game/` — conteúdo do jogo e estado (reducer)
 - `src/theme.ts` — cores, tipografia e sombra do Figma

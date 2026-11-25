@@ -4,11 +4,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 import { IconeCadeado } from '@/components/Icones';
 import { ItemLista, LinkVoltar, Papel, Tela } from '@/components/ui';
-import { VERBETES, type VerbeteId } from '@/game/conteudo';
+import { NOME_DIA, VERBETES, indiceDia, type VerbeteId } from '@/game/conteudo';
 import { rotuloHud, useJogo } from '@/game/estado';
 import { cor, MARGEM, tipo } from '@/theme';
-
-const NOME_DIA = { seg: 'segunda-feira', sex: 'sexta-feira' } as const;
 
 /** 07 Manual */
 export default function Manual() {
@@ -21,7 +19,7 @@ export default function Manual() {
     if (!v) return false;
     // Fora do jogo (início, fim, derrota) o manual fica todo aberto para consulta.
     if (leitura) return true;
-    return v.liberadoEm === 'seg' || estado.dia === 'sex';
+    return indiceDia(v.liberadoEm) <= indiceDia(estado.dia);
   };
 
   const [atual, setAtual] = useState<VerbeteId>(inicial && liberado(inicial) ? inicial : 'phishing');

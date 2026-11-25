@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { IconeAlerta, IconeCheck, IconeLupa, IconeX } from '@/components/Icones';
 import { Botao, MarcaTexto, PistaLupa, Tela } from '@/components/ui';
 import { LOJAS } from '@/game/conteudo';
-import { rotuloHud, segundaConcluida, useJogo } from '@/game/estado';
+import { proximaTarefa, rotuloHud, useJogo } from '@/game/estado';
 import { cor, MARGEM, sombra, tipo } from '@/theme';
 
 /** 05 Navegador */
@@ -15,6 +15,7 @@ export default function Navegador() {
   const [lupa, setLupa] = useState(false);
   const loja = LOJAS.find((l) => l.id === lojaId) ?? LOJAS[0];
   const comprada = estado.compra ? LOJAS.find((l) => l.id === estado.compra) : null;
+  const proxima = proximaTarefa(estado);
 
   const trocarLoja = (id: string) => {
     setLojaId(id);
@@ -36,15 +37,19 @@ export default function Navegador() {
 
         {comprada ? (
           <View style={[estilos.pagina, { padding: 20, gap: 12 }]}>
-            <Text style={[tipo.titulo, { color: cor.tinta }]}>Compra aprovada</Text>
-            <Text style={[tipo.corpo, { color: cor.tinta }]}>
-              2 monitores na {comprada.nome}, pagos com o cartão corporativo. A Marina já recebeu o comprovante.
+            <Text style={[tipo.titulo, { color: cor.tinta }]}>
+              {estado.dia === 'seg' ? 'Compra aprovada' : 'Monitores entregues'}
             </Text>
-            {segundaConcluida(estado) ? (
-              <Botao tipo="escuro" titulo="Voltar ao memorando" onPress={() => router.replace('/briefing')} />
-            ) : (
-              <Botao tipo="escuro" titulo="Voltar à caixa de entrada" onPress={() => router.replace('/caixa')} />
-            )}
+            <Text style={[tipo.corpo, { color: cor.tinta }]}>
+              {estado.dia === 'seg'
+                ? `2 monitores na ${comprada.nome}, pagos com o cartão corporativo. A Marina já recebeu o comprovante.`
+                : `Os 2 monitores da ${comprada.nome} chegaram e o time de dados já está usando. Nenhuma tarefa no navegador hoje.`}
+            </Text>
+            <Botao
+              tipo="escuro"
+              titulo={proxima ? proxima.rotulo : 'Voltar ao memorando'}
+              onPress={() => router.replace(proxima ? proxima.rota : '/briefing')}
+            />
           </View>
         ) : (
           <>

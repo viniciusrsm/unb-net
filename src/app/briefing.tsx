@@ -2,75 +2,72 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { Botao, Papel, Tela } from '@/components/ui';
-import { EMAILS, LOJAS } from '@/game/conteudo';
-import { emailsResolvidos, relogio, rotuloHud, segundaConcluida, useJogo } from '@/game/estado';
+import {
+  ABREV_DIA,
+  DIAS,
+  DIAS_INFO,
+  ESCOLHAS,
+  LOJAS,
+  NOME_DIA,
+  capitalizar,
+  emailsDoDia,
+  indiceDia,
+  type Tarefa,
+} from '@/game/conteudo';
+import { diaConcluido, proximaTarefa, relogio, rotuloHud, tarefaFeita, useJogo, type Estado } from '@/game/estado';
 import { cor, MARGEM, tipo } from '@/theme';
 
-const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
-
-type Tarefa = { titulo: string; detalhe: string; feita: boolean };
+function descrever(estado: Estado, t: Tarefa) {
+  if (t.tipo === 'caixa') {
+    const n = emailsDoDia(estado.dia).length;
+    return { titulo: 'Ler a caixa de entrada', detalhe: `${n} mensage${n === 1 ? 'm' : 'ns'}` };
+  }
+  if (t.tipo === 'compra') return { titulo: 'Comprar 2 monitores', detalhe: `${LOJAS.length} lojas indicadas` };
+  const e = ESCOLHAS.find((x) => x.id === t.id);
+  return { titulo: e?.tarefa ?? '', detalhe: e?.detalheTarefa ?? '' };
+}
 
 /** 02 Briefing do dia */
 export default function Briefing() {
   const { estado, despachar } = useJogo();
-  const sexta = estado.dia === 'sex';
-  const segundaOk = segundaConcluida(estado);
+  const info = DIAS_INFO[estado.dia];
+  const idx = indiceDia(estado.dia);
+  const feito = diaConcluido(estado);
+  const proxima = proximaTarefa(estado);
 
-  const tarefas: Tarefa[] = sexta
-    ? [{ titulo: 'Recuperar o servidor de arquivos', detalhe: 'Ataque em andamento', feita: false }]
-    : [
-        { titulo: 'Ler a caixa de entrada', detalhe: `${EMAILS.length} mensagens`, feita: emailsResolvidos(estado) },
-        { titulo: 'Comprar 2 monitores', detalhe: `${LOJAS.length} lojas indicadas`, feita: estado.compra !== null },
-      ];
-
-  const memorando = sexta
-    ? 'Terça a quinta passaram sem incidentes. Mas agora, no fim da sexta, o Financeiro ligou: os arquivos do servidor estão sumindo. A TI precisa de você.'
-    : segundaOk
-      ? 'Bom trabalho hoje. Caixa limpa e compra feita sem cair em nenhum golpe. Pode encerrar o dia.'
-      : 'Bem-vindo à UnB Net. Hoje você cuida da caixa de entrada do time e de uma compra para o setor de Compras. Na dúvida, não clique: consulte o manual.';
-
-  let acao: { titulo: string; onPress: () => void };
-  if (sexta) {
-    acao = { titulo: 'Ir para a sala da TI', onPress: () => router.replace('/incidente') };
-  } else if (segundaOk) {
-    acao = {
-      titulo: 'Encerrar segunda-feira',
-      onPress: () => {
-        despachar({ tipo: 'avancarParaSexta' });
-        router.replace('/briefing');
-      },
-    };
-  } else if (emailsResolvidos(estado)) {
-    acao = { titulo: 'Abrir o navegador', onPress: () => router.replace('/navegador') };
-  } else {
-    acao = { titulo: 'Abrir a caixa de entrada', onPress: () => router.replace('/caixa') };
-  }
-
-  const indiceDia = sexta ? 4 : 0;
+  const acao = proxima
+    ? { titulo: proxima.rotulo, onPress: () => router.replace(proxima.rota) }
+    : {
+        titulo: `Encerrar ${NOME_DIA[estado.dia]}`,
+        onPress: () => {
+          despachar({ tipo: 'avancarDia' });
+          router.replace('/briefing');
+        },
+      };
 
   return (
     <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
       <ScrollView contentContainerStyle={estilos.conteudo}>
         <View style={{ gap: 6 }}>
-          <Text style={[tipo.pequenoDestaque, { color: cor.marcaTexto }]}>Dia {indiceDia + 1} de 5</Text>
-          <Text style={[tipo.displayG, { color: cor.formulario }]}>{sexta ? 'Sexta-feira' : 'Segunda-feira'}</Text>
+          <Text style={[tipo.pequenoDestaque, { color: cor.marcaTexto }]}>Dia {idx + 1} de 5</Text>
+          <Text style={[tipo.displayG, { color: cor.formulario }]}>{capitalizar(NOME_DIA[estado.dia])}</Text>
         </View>
 
         <View style={{ flexDirection: 'row', gap: 6 }}>
           {DIAS.map((d, i) => {
-            const atual = i === indiceDia;
-            const passado = i < indiceDia;
+            const atual = i === idx;
+            const passado = i < idx;
             return (
               <View key={d} style={{ flex: 1, gap: 6 }}>
                 <View
                   style={[
                     estilos.segmento,
-                    atual
-                      ? { backgroundColor: cor.marcaTexto }
-                      : { backgroundColor: cor.formulario, opacity: passado ? 0.6 : 0.2 },
+                    atual || passado
+                      ? { backgroundColor: cor.marcaTexto, opacity: passado ? 0.5 : 1 }
+                      : { backgroundColor: cor.formulario, opacity: 0.2 },
                   ]}
                 />
-                <Text style={[tipo.pequeno, { color: atual ? cor.formulario : cor.linha }]}>{d}</Text>
+                <Text style={[tipo.pequeno, { color: atual ? cor.formulario : cor.linha }]}>{ABREV_DIA[d]}</Text>
               </View>
             );
           })}
@@ -79,29 +76,33 @@ export default function Briefing() {
         <Papel style={estilos.memo}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Text style={[tipo.pequenoDestaque, { color: cor.texto2, flex: 1 }]}>Memorando do RH</Text>
-            <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{relogio(sexta ? estado.minutos : 8 * 60 + 30)}</Text>
+            <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{relogio(info.inicio)}</Text>
           </View>
-          <Text style={[tipo.corpo, { color: cor.tinta }]}>{memorando}</Text>
+          <Text style={[tipo.corpo, { color: cor.tinta }]}>{feito && info.memorandoFeito ? info.memorandoFeito : info.memorando}</Text>
           <View>
-            {tarefas.map((t) => (
-              <View key={t.titulo} style={estilos.tarefa}>
-                <View style={[estilos.check, t.feita && { backgroundColor: cor.tinta }]}>
-                  {t.feita ? <Text style={estilos.checkMarca}>✓</Text> : null}
+            {info.tarefas.map((t) => {
+              const { titulo, detalhe } = descrever(estado, t);
+              const ok = tarefaFeita(estado, t);
+              return (
+                <View key={titulo} style={estilos.tarefa}>
+                  <View style={[estilos.check, ok && { backgroundColor: cor.tinta }]}>
+                    {ok ? <Text style={estilos.checkMarca}>✓</Text> : null}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        tipo.corpoDestaque,
+                        { color: cor.tinta },
+                        ok && { textDecorationLine: 'line-through', color: cor.texto2 },
+                      ]}
+                    >
+                      {titulo}
+                    </Text>
+                    <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{detalhe}</Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[
-                      tipo.corpoDestaque,
-                      { color: cor.tinta },
-                      t.feita && { textDecorationLine: 'line-through', color: cor.texto2 },
-                    ]}
-                  >
-                    {t.titulo}
-                  </Text>
-                  <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{t.detalhe}</Text>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </Papel>
 
