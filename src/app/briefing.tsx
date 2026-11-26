@@ -6,6 +6,8 @@ import { Botao, Papel, Tela } from '@/components/ui';
 import {
   descreverTarefa,
   diaConcluido,
+  errosNaSemana,
+  errosPermitidos,
   planoAtual,
   relogio,
   rotaDaTarefa,
@@ -25,6 +27,8 @@ export default function Briefing() {
 
   const idx = indiceDia(estado.dia);
   const feito = diaConcluido(estado);
+  const erros = errosNaSemana(estado);
+  const permitidos = errosPermitidos(estado);
 
   return (
     <Tela hud={rotuloHud(estado.dia)}>
@@ -62,7 +66,11 @@ export default function Briefing() {
             <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{relogio(INICIO_DIA[estado.dia])}</Text>
           </View>
           <Text style={[tipo.corpo, { color: cor.tinta }]}>
-            {feito ? 'Todas as tarefas de hoje foram feitas sem cair em nenhum golpe. Pode encerrar o dia.' : plano.intro}
+            {feito
+              ? erros > 0
+                ? 'Todas as tarefas de hoje foram feitas. Pode encerrar o dia.'
+                : 'Todas as tarefas de hoje foram feitas sem cair em nenhum golpe. Pode encerrar o dia.'
+              : plano.intro}
           </Text>
           <View>
             {plano.atividades.map((a) => {
@@ -100,7 +108,7 @@ export default function Briefing() {
                       {titulo}
                     </Text>
                     <Text style={[tipo.pequeno, { color: cor.texto2 }]}>
-                      {liberada ? detalhe : 'O pedido chega por e-mail: confie nele na caixa de entrada para abrir.'}
+                      {liberada ? detalhe : 'O pedido chega por e-mail: abra a caixa de entrada primeiro.'}
                     </Text>
                   </View>
                   {liberada ? (
@@ -121,7 +129,7 @@ export default function Briefing() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <View style={estilos.ponto} />
           <Text style={[tipo.pequenoDestaque, { color: cor.formulario, flex: 1 }]}>
-            Erros permitidos nesta semana: nenhum
+            {permitidos === 0 ? 'Erros permitidos nesta semana: nenhum' : `Erros nesta semana: ${erros} de ${permitidos}`}
           </Text>
         </View>
 

@@ -2,7 +2,8 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 
 import { Botao, Cracha, Tela } from '@/components/ui';
-import { useJogo } from '@/game/estado';
+import { errosNaSemana, useJogo } from '@/game/estado';
+import { NOME_DIFICULDADE } from '@/game/tipos';
 import { cor, tipo } from '@/theme';
 
 /** 09 Semana concluída */
@@ -10,10 +11,11 @@ export default function Concluido() {
   const { estado, iniciarSemana } = useJogo();
   if (!estado.concluido) return <Redirect href="/" />;
 
+  const erros = errosNaSemana(estado);
   const stats = [
     { valor: estado.totalDecisoes, rotulo: 'decisões' },
     { valor: estado.verbetesLidos.length, rotulo: 'verbetes lidos' },
-    { valor: 0, rotulo: 'erros' },
+    { valor: erros, rotulo: erros === 1 ? 'erro' : 'erros' },
   ];
 
   return (
@@ -26,10 +28,12 @@ export default function Concluido() {
         <View style={{ flexGrow: 1, minHeight: 24 }} />
 
         <View style={{ gap: 12 }}>
-          <Text style={[tipo.displayG, { color: cor.formulario }]}>Semana{'\n'}concluída.{'\n'}Nenhum erro.</Text>
+          <Text style={[tipo.displayG, { color: cor.formulario }]}>Semana{'\n'}concluída.{erros === 0 ? '\nNenhum erro.' : ''}</Text>
           <Text style={[tipo.corpo, { color: cor.formulario }]}>
-            O RH trocou seu crachá provisório pelo definitivo. Você terminou a semana {estado.semana} com o sistema da UnB
-            Net inteiro. Na próxima semana, os golpes serão outros.
+            O RH trocou seu crachá provisório pelo definitivo. Você terminou a semana {estado.semana} no nível{' '}
+            {NOME_DIFICULDADE[estado.dificuldade].toLowerCase()}
+            {erros === 0 ? ' com o sistema da UnB Net inteiro' : `, com ${erros} advertência${erros > 1 ? 's' : ''}`}. Na
+            próxima semana, os golpes serão outros.
           </Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {stats.map((s) => (

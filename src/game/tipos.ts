@@ -22,6 +22,15 @@ export const INICIO_DIA: Record<Dia, number> = {
   sex: 16 * 60 + 40,
 };
 
+export type Dificuldade = 'facil' | 'media' | 'dificil';
+
+export const DIFICULDADES: Dificuldade[] = ['facil', 'media', 'dificil'];
+
+export const NOME_DIFICULDADE: Record<Dificuldade, string> = { facil: 'Fácil', media: 'Média', dificil: 'Difícil' };
+
+/** Quantos erros a semana tolera; o erro seguinte demite. */
+export const ERROS_PERMITIDOS: Record<Dificuldade, number> = { facil: 5, media: 3, dificil: 0 };
+
 export const capitalizar = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export type VerbeteId =
