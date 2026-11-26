@@ -4,10 +4,11 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 
 import { Acerto, ListaOpcoes, Lupa, useOpcoesEmbaralhadas } from '@/components/atividade';
 import { IconeAlerta } from '@/components/Icones';
-import { Botao, LinkVoltar, Tela } from '@/components/ui';
+import { Botao, LinkVoltar, Tela, voltarAoMemorando } from '@/components/ui';
 import { ESCOLHAS, FINAIS } from '@/game/conteudo/atividades';
 import { rotuloHud, useJogo } from '@/game/estado';
 import type { Escolha } from '@/game/tipos';
+import { tocar } from '@/sons';
 import { cor, MARGEM, tipo } from '@/theme';
 
 /**
@@ -37,6 +38,7 @@ function Conteudo({ escolha }: { escolha: Escolha }) {
       router.replace('/desligado');
       return;
     }
+    tocar('acerto');
     despachar({ tipo: 'concluirAtividade', chave });
     if (escolha.final) router.replace('/concluido');
   };
@@ -48,10 +50,11 @@ function Conteudo({ escolha }: { escolha: Escolha }) {
     : 'Escolha uma opção';
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
+    <Tela hud={rotuloHud(estado.dia)}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, gap: 16, paddingBottom: 36, paddingTop: escolha.alerta ? 0 : 16 }}>
         {escolha.alerta ? (
           <View style={estilos.alerta}>
+            <LinkVoltar rotulo="Memorando" onPress={voltarAoMemorando} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <IconeAlerta size={22} color={cor.branco} />
               <Text style={[tipo.displayM, { color: cor.branco, flex: 1 }]}>{escolha.alerta.titulo}</Text>
@@ -60,7 +63,7 @@ function Conteudo({ escolha }: { escolha: Escolha }) {
           </View>
         ) : (
           <View style={{ paddingHorizontal: MARGEM, gap: 14 }}>
-            <LinkVoltar rotulo="Memorando" onPress={() => router.replace('/briefing')} />
+            <LinkVoltar rotulo="Memorando" onPress={voltarAoMemorando} />
             {escolha.titulo ? <Text style={[tipo.displayM, { color: cor.formulario }]}>{escolha.titulo}</Text> : null}
           </View>
         )}

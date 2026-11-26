@@ -3,10 +3,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 
 import { Acerto, Lupa } from '@/components/atividade';
-import { Botao, LinkVoltar, Papel, Tela } from '@/components/ui';
+import { Botao, LinkVoltar, Papel, Tela, voltarAoMemorando } from '@/components/ui';
 import { TRIAGENS } from '@/game/conteudo/atividades';
 import { planoAtual, rotuloHud, useJogo } from '@/game/estado';
 import type { ItemTriagem, Triagem } from '@/game/tipos';
+import { tocar } from '@/sons';
 import { cor, fonte, MARGEM, tipo } from '@/theme';
 
 /** Triagem: classificar vários itens de uma vez. Um erro já conta. */
@@ -27,7 +28,10 @@ function Conteudo({ triagem, itens }: { triagem: Triagem; itens: ItemTriagem[] }
   const [lupa, setLupa] = useState(false);
   const completas = respostas.every((r) => r !== null);
 
-  const marcar = (i: number, ok: boolean) => setRespostas((r) => r.map((x, j) => (j === i ? ok : x)));
+  const marcar = (i: number, ok: boolean) => {
+    if (respostas[i] !== ok) tocar('toque');
+    setRespostas((r) => r.map((x, j) => (j === i ? ok : x)));
+  };
 
   const confirmar = () => {
     const erradas = itens.filter((it, i) => respostas[i] !== it.ok);
@@ -43,13 +47,14 @@ function Conteudo({ triagem, itens }: { triagem: Triagem; itens: ItemTriagem[] }
       router.replace('/desligado');
       return;
     }
+    tocar('acerto');
     despachar({ tipo: 'concluirAtividade', chave, minutos: 6 });
   };
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
+    <Tela hud={rotuloHud(estado.dia)}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, gap: 14, padding: MARGEM, paddingBottom: 36 }}>
-        <LinkVoltar rotulo="Memorando" onPress={() => router.replace('/briefing')} />
+        <LinkVoltar rotulo="Memorando" onPress={voltarAoMemorando} />
         <Text style={[tipo.displayM, { color: cor.formulario }]}>{triagem.titulo}</Text>
         <Text style={[tipo.corpo, { color: cor.formulario }]}>{triagem.enunciado}</Text>
 

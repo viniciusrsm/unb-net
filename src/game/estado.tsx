@@ -6,13 +6,16 @@ import { ESCOLHAS, FINAIS, LIGACOES, TRIAGENS } from './conteudo/atividades';
 import { falhaDenunciaFalsa } from './conteudo/emails';
 import { gerarPlano, idsDoPlano } from './gerador';
 import {
-  ABREV_DIA,
   DIAS,
+  ERROS_PERMITIDOS,
   INICIO_DIA,
+  NOME_DIA,
+  capitalizar,
   chaveAtividade,
   indiceDia,
   type AtividadePlano,
   type Dia,
+  type Dificuldade,
   type Falha,
   type PlanoDia,
   type VerbeteId,
@@ -35,14 +38,22 @@ export type Estado = {
   lojasCompradas: Record<string, string>;
   verbetesLidos: VerbeteId[];
   totalDecisoes: number;
+  /** Dificuldade da semana em curso (e a escolhida na tela inicial). */
+  dificuldade: Dificuldade;
+  /** Erros cometidos em cada dia da semana; repetir um dia zera os erros dele. */
+  erros: Partial<Record<Dia, number>>;
+  /** Último erro, mostrado na tela de advertência/demissão. */
   falha: Falha | null;
+  /** O último erro passou do limite da semana. */
+  demitido: boolean;
   concluido: boolean;
   /** Ids de conteúdo já vistos (persistido entre sessões). */
   vistos: string[];
 };
 
 type Acao =
-  | { tipo: 'carregar'; vistos: string[]; semana: number }
+  | { tipo: 'carregar'; vistos: string[]; semana: number; dificuldade?: Dificuldade }
+  | { tipo: 'definirDificuldade'; dificuldade: Dificuldade }
   | { tipo: 'iniciarSemana'; plano: PlanoDia }
   | { tipo: 'avancarDia'; plano: PlanoDia }
   | { tipo: 'repetirDia'; plano: PlanoDia }
@@ -66,7 +77,10 @@ export const estadoInicial: Estado = {
   lojasCompradas: {},
   verbetesLidos: [],
   totalDecisoes: 0,
+  dificuldade: 'media',
+  erros: {},
   falha: null,
+  demitido: false,
   concluido: false,
   vistos: [],
 };
@@ -74,10 +88,26 @@ export const estadoInicial: Estado = {
 const comVistos = (vistos: string[], plano: PlanoDia) =>
   [...vistos.filter((v) => !idsDoPlano(plano).includes(v)), ...idsDoPlano(plano)].slice(-LIMITE_VISTOS);
 
+export const totalErros = (erros: Estado['erros']) => Object.values(erros).reduce<number>((t, n) => t + (n ?? 0), 0);
+
+/** Conta um erro no dia atual e decide se ele ainda cabe na margem da semana. */
+function registrarErro(estado: Estado, falha: Falha): Estado {
+  const erros = { ...estado.erros, [estado.dia]: (estado.erros[estado.dia] ?? 0) + 1 };
+  return { ...estado, erros, falha, demitido: totalErros(erros) > ERROS_PERMITIDOS[estado.dificuldade] };
+}
+
 function reducer(estado: Estado, acao: Acao): Estado {
   switch (acao.tipo) {
     case 'carregar':
-      return { ...estado, vistos: acao.vistos, semana: Math.max(estado.semana, acao.semana) };
+      return {
+        ...estado,
+        vistos: acao.vistos,
+        semana: Math.max(estado.semana, acao.semana),
+        dificuldade: acao.dificuldade ?? estado.dificuldade,
+      };
+
+    case 'definirDificuldade':
+      return { ...estado, dificuldade: acao.dificuldade };
 
     case 'iniciarSemana':
       return {
@@ -86,6 +116,7 @@ function reducer(estado: Estado, acao: Acao): Estado {
         semana: estado.semana + 1,
         planos: { seg: acao.plano },
         verbetesLidos: estado.verbetesLidos,
+        dificuldade: estado.dificuldade,
         vistos: comVistos(estado.vistos, acao.plano),
       };
 
@@ -110,7 +141,9 @@ function reducer(estado: Estado, acao: Acao): Estado {
         emailsAbertos: estado.emailsAbertos.filter((id) => !emails.includes(id)),
         decisoes: Object.fromEntries(Object.entries(estado.decisoes).filter(([k]) => !emails.includes(k))),
         concluidas: estado.concluidas.filter((c) => !chaves.includes(c)),
+        erros: { ...estado.erros, [acao.plano.dia]: 0 },
         falha: null,
+        demitido: false,
         concluido: false,
         vistos: comVistos(estado.vistos, acao.plano),
       };
@@ -124,13 +157,13 @@ function reducer(estado: Estado, acao: Acao): Estado {
       const email = estado.planos[estado.dia]?.emails.find((e) => e.id === acao.id);
       if (!email || estado.decisoes[acao.id]) return estado;
       const falha = acao.decisao === 'confiar' ? (email.golpe ? email.falha : undefined) : email.golpe ? undefined : falhaDenunciaFalsa(email);
-      return {
+      const decidido = {
         ...estado,
         decisoes: { ...estado.decisoes, [acao.id]: acao.decisao },
         totalDecisoes: estado.totalDecisoes + 1,
         minutos: estado.minutos + 2,
-        falha: falha ?? null,
       };
+      return falha ? registrarErro(decidido, falha) : decidido;
     }
 
     case 'concluirAtividade': {
@@ -148,7 +181,7 @@ function reducer(estado: Estado, acao: Acao): Estado {
     }
 
     case 'falhar':
-      return { ...estado, falha: acao.falha, totalDecisoes: estado.totalDecisoes + 1, minutos: estado.minutos + 3 };
+      return registrarErro({ ...estado, totalDecisoes: estado.totalDecisoes + 1, minutos: estado.minutos + 3 }, acao.falha);
 
     case 'lerVerbete':
       if (estado.verbetesLidos.includes(acao.id)) return estado;
@@ -179,8 +212,9 @@ export function JogoProvider({ children }: { children: ReactNode }) {
     AsyncStorage.getItem(CHAVE_STORAGE)
       .then((bruto) => {
         if (!bruto) return;
-        const salvo = JSON.parse(bruto) as { vistos?: string[]; semana?: number };
-        despachar({ tipo: 'carregar', vistos: salvo.vistos ?? [], semana: salvo.semana ?? 0 });
+        const salvo = JSON.parse(bruto) as { vistos?: string[]; semana?: number; dificuldade?: Dificuldade };
+        const dificuldade = salvo.dificuldade && salvo.dificuldade in ERROS_PERMITIDOS ? salvo.dificuldade : undefined;
+        despachar({ tipo: 'carregar', vistos: salvo.vistos ?? [], semana: salvo.semana ?? 0, dificuldade });
       })
       .catch(() => {})
       .finally(() => {
@@ -190,8 +224,11 @@ export function JogoProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!carregou.current) return;
-    AsyncStorage.setItem(CHAVE_STORAGE, JSON.stringify({ vistos: estado.vistos, semana: estado.semana })).catch(() => {});
-  }, [estado.vistos, estado.semana]);
+    AsyncStorage.setItem(
+      CHAVE_STORAGE,
+      JSON.stringify({ vistos: estado.vistos, semana: estado.semana, dificuldade: estado.dificuldade }),
+    ).catch(() => {});
+  }, [estado.vistos, estado.semana, estado.dificuldade]);
 
   const planosDaSemana = (e: Estado, exceto: Dia) =>
     DIAS.filter((d) => d !== exceto && e.planos[d]).map((d) => e.planos[d]!);
@@ -243,8 +280,8 @@ export function relogio(minutos: number) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-export function rotuloHud(dia: Dia, minutos: number) {
-  return `${ABREV_DIA[dia]}, ${relogio(minutos)}`;
+export function rotuloHud(dia: Dia) {
+  return capitalizar(NOME_DIA[dia]);
 }
 
 export const planoAtual = (estado: Estado) => estado.planos[estado.dia];
@@ -259,6 +296,25 @@ export function emailsResolvidos(estado: Estado) {
 
 export function tarefaFeita(estado: Estado, a: AtividadePlano) {
   return a.tipo === 'caixa' ? emailsResolvidos(estado) : estado.concluidas.includes(chaveAtividade(a));
+}
+
+/**
+ * Tarefas encadeadas só abrem depois da anterior: a compra chega por e-mail,
+ * então fica trancada até você abrir o pedido e decidir sobre ele. Confiar é o certo;
+ * se você denunciar e ainda tiver margem de erro, a TI desfaz o mal-entendido e o pedido segue.
+ */
+export function tarefaLiberada(estado: Estado, a: AtividadePlano) {
+  return a.tipo !== 'compra' || !!estado.decisoes[a.compra.emailPedido];
+}
+
+export const errosNaSemana = (estado: Estado) => totalErros(estado.erros);
+
+export const errosPermitidos = (estado: Estado) => ERROS_PERMITIDOS[estado.dificuldade];
+
+/** Compra do dia, se houver e já estiver liberada. */
+export function compraLiberada(estado: Estado) {
+  const a = planoAtual(estado)?.atividades.find((x) => x.tipo === 'compra');
+  return a?.tipo === 'compra' && tarefaLiberada(estado, a) ? a.compra : null;
 }
 
 export function diaConcluido(estado: Estado) {
@@ -308,7 +364,7 @@ export function rotaDaTarefa(a: AtividadePlano): Href {
 
 /** Próxima tarefa pendente do dia, ou null se o dia acabou. */
 export function proximaTarefa(estado: Estado): { rota: Href; rotulo: string } | null {
-  const a = (planoAtual(estado)?.atividades ?? []).find((x) => !tarefaFeita(estado, x));
+  const a = (planoAtual(estado)?.atividades ?? []).find((x) => !tarefaFeita(estado, x) && tarefaLiberada(estado, x));
   if (!a) return null;
   let rotulo: string;
   if (a.tipo === 'caixa') rotulo = 'Abrir a caixa de entrada';
@@ -323,11 +379,3 @@ export function naoLidos(estado: Estado) {
   return emailsDoDia(estado).filter((e) => !e.jaLido && !estado.emailsAbertos.includes(e.id)).length;
 }
 
-/** Temas que já apareceram nesta semana até o dia atual, com o dia em que apareceram. */
-export function temasLiberados(estado: Estado): Map<VerbeteId, Dia> {
-  const mapa = new Map<VerbeteId, Dia>([['phishing', 'seg']]);
-  for (const d of DIAS.slice(0, indiceDia(estado.dia) + 1)) {
-    for (const t of estado.planos[d]?.temas ?? []) if (!mapa.has(t)) mapa.set(t, d);
-  }
-  return mapa;
-}

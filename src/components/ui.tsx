@@ -3,6 +3,8 @@ import { Animated, Pressable, StyleSheet, Text, View, type StyleProp, type ViewS
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { compraLiberada, useJogo } from '@/game/estado';
+import { tocar } from '@/sons';
 import { cor, MARGEM, sombra, tipo } from '@/theme';
 import { Bonequinho, Furo, IconeCaixa, IconeManual, IconeNavegador, IconeVoltar } from './Icones';
 
@@ -74,9 +76,13 @@ const ABAS: { app: App; rotulo: string; Icone: typeof IconeCaixa }[] = [
 
 export function BarraDeAbas({ ativa }: { ativa: App }) {
   const { bottom } = useSafeAreaInsets();
+  const { estado } = useJogo();
+  // O navegador só entra na barra quando há uma compra liberada (pedido aceito na caixa).
+  const temCompra = !!compraLiberada(estado);
+  const abas = ABAS.filter(({ app }) => app !== 'navegador' || temCompra || ativa === 'navegador');
   return (
     <View style={[estilos.barra, { paddingBottom: Math.max(bottom, 30) }]}>
-      {ABAS.map(({ app, rotulo, Icone }) => {
+      {abas.map(({ app, rotulo, Icone }) => {
         const ativo = app === ativa;
         return (
           <Pressable
@@ -135,6 +141,9 @@ export function Tela({
   );
 }
 
+/** Volta ao memorando que está embaixo na pilha (ou o abre, se não estiver lá). */
+export const voltarAoMemorando = () => router.dismissTo('/briefing');
+
 export function LinkVoltar({ rotulo, onPress }: { rotulo: string; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="link" onPress={onPress} hitSlop={10} style={estilos.voltar}>
@@ -178,6 +187,7 @@ export function ItemLista({ texto, corTexto = cor.tinta }: { texto: string; corT
 export function PistaLupa({ texto, rotacao = -1.2 }: { texto: string; rotacao?: number }) {
   const [entrada] = useState(() => new Animated.Value(0));
   useEffect(() => {
+    tocar('lupa');
     Animated.spring(entrada, { toValue: 1, useNativeDriver: true, friction: 6 }).start();
   }, [entrada]);
   return (
@@ -217,10 +227,13 @@ export function Carimbo({ tipo: t }: { tipo: 'Confiar' | 'Denunciar' }) {
 export function CarimboAnimado({ tipo: t, onFim }: { tipo: 'Confiar' | 'Denunciar'; onFim: () => void }) {
   const [v] = useState(() => new Animated.Value(0));
   useEffect(() => {
+    // O som sai no impacto, quando o carimbo termina de "descer".
+    const impacto = setTimeout(() => tocar('carimbo'), 150);
     Animated.sequence([
       Animated.timing(v, { toValue: 1, duration: 180, useNativeDriver: true }),
       Animated.delay(750),
     ]).start(() => onFim());
+    return () => clearTimeout(impacto);
   }, [v, onFim]);
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
@@ -345,7 +358,7 @@ const estilos = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: cor.formulario,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     paddingHorizontal: 28,
   },
   aba: { width: 84, alignItems: 'center', gap: 6, paddingBottom: 4 },

@@ -22,6 +22,15 @@ export const INICIO_DIA: Record<Dia, number> = {
   sex: 16 * 60 + 40,
 };
 
+export type Dificuldade = 'facil' | 'media' | 'dificil';
+
+export const DIFICULDADES: Dificuldade[] = ['facil', 'media', 'dificil'];
+
+export const NOME_DIFICULDADE: Record<Dificuldade, string> = { facil: 'Fácil', media: 'Média', dificil: 'Difícil' };
+
+/** Quantos erros a semana tolera; o erro seguinte demite. */
+export const ERROS_PERMITIDOS: Record<Dificuldade, number> = { facil: 5, media: 3, dificil: 0 };
+
 export const capitalizar = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export type VerbeteId =
@@ -37,8 +46,12 @@ export type VerbeteId =
   | 'backup'
   | 'incidentes';
 
-/** O que aparece na tela "Desligado". */
-export type Falha = { texto: string; pistas: string[]; verbete: VerbeteId };
+/**
+ * O que aparece na tela "Desligado".
+ * Sem `verbete`, o erro não foi cair num golpe (ex.: denunciar uma mensagem legítima):
+ * a tela só explica por que era real, sem sugerir o manual.
+ */
+export type Falha = { texto: string; pistas: string[]; verbete?: VerbeteId };
 
 export type Email = {
   id: string;
@@ -146,6 +159,8 @@ export type Compra = {
   quantidade: number;
   limite: string;
   lojas: Loja[];
+  /** Id do e-mail com o pedido: a compra só abre depois de confiar nele. */
+  emailPedido: string;
 };
 
 export type AtividadePlano =

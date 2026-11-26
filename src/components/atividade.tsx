@@ -3,10 +3,11 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { IconeLupa, Radio } from '@/components/Icones';
-import { Botao, Papel, PistaLupa } from '@/components/ui';
+import { Botao, Papel, PistaLupa, voltarAoMemorando } from '@/components/ui';
 import { embaralhar } from '@/game/gerador';
 import { proximaTarefa, useJogo } from '@/game/estado';
 import type { Opcao } from '@/game/tipos';
+import { tocar } from '@/sons';
 import { cor, tipo } from '@/theme';
 
 /** Opções em ordem aleatória (fixada enquanto a tela estiver aberta). */
@@ -38,7 +39,10 @@ export function ListaOpcoes({
             accessibilityRole="radio"
             accessibilityState={{ checked: ativa, disabled: desabilitada }}
             disabled={desabilitada}
-            onPress={() => onMarcar(o.id)}
+            onPress={() => {
+              if (o.id !== marcada) tocar('toque');
+              onMarcar(o.id);
+            }}
             onLongPress={onLupa}
             delayLongPress={350}
             style={[estilos.opcao, ativa && { backgroundColor: cor.branco, borderLeftWidth: 4, borderLeftColor: cor.tinta }]}
@@ -81,7 +85,7 @@ export function Acerto({ explicacao }: { explicacao: string }) {
       {proxima ? (
         <Botao titulo={proxima.rotulo} onPress={() => router.replace(proxima.rota)} />
       ) : (
-        <Botao titulo="Voltar ao memorando" onPress={() => router.replace('/briefing')} />
+        <Botao titulo="Voltar ao memorando" onPress={voltarAoMemorando} />
       )}
     </View>
   );

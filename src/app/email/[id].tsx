@@ -34,7 +34,7 @@ export default function EmailTela() {
 
   if (!email) {
     return (
-      <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
+      <Tela hud={rotuloHud(estado.dia)}>
         <View style={{ padding: MARGEM }}>
           <LinkVoltar rotulo="Caixa de entrada" onPress={() => router.back()} />
         </View>
@@ -61,7 +61,7 @@ export default function EmailTela() {
   ) : null;
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)} rodape={rodape}>
+    <Tela hud={rotuloHud(estado.dia)} rodape={rodape}>
       <ScrollView contentContainerStyle={estilos.conteudo}>
         <LinkVoltar rotulo="Caixa de entrada" onPress={() => router.back()} />
 
@@ -98,10 +98,13 @@ export default function EmailTela() {
               </View>
             )}
 
+            {/* O carimbo fica numa faixa própria no fim do papel, para não cobrir o texto nem a lupa. */}
             {decisao && !carimbando ? (
-              <View pointerEvents="none" style={estilos.carimboFixo}>
-                <View style={{ transform: [{ rotate: decisao === 'denunciar' ? '-8deg' : '6deg' }, { scale: 0.7 }] }}>
-                  <Carimbo tipo={decisao === 'denunciar' ? 'Denunciar' : 'Confiar'} />
+              <View pointerEvents="none" style={estilos.carimboFaixa}>
+                <View style={estilos.carimboFixo}>
+                  <View style={{ transform: [{ rotate: decisao === 'denunciar' ? '-6deg' : '5deg' }, { scale: 0.62 }] }}>
+                    <Carimbo tipo={decisao === 'denunciar' ? 'Denunciar' : 'Confiar'} />
+                  </View>
                 </View>
               </View>
             ) : null}
@@ -138,5 +141,8 @@ const estilos = StyleSheet.create({
     paddingHorizontal: MARGEM,
     gap: 12,
   },
-  carimboFixo: { position: 'absolute', right: 0, bottom: 8 },
+  // A escala não muda o tamanho de layout: a altura fixa reserva só o espaço visível
+  // e a margem negativa compensa a largura "fantasma" do carimbo encolhido.
+  carimboFaixa: { marginTop: 4, borderTopWidth: 1, borderTopColor: cor.linha },
+  carimboFixo: { height: 72, alignItems: 'flex-end', justifyContent: 'center', marginRight: -40 },
 });

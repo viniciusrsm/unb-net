@@ -521,6 +521,5 @@ export function falhaDenunciaFalsa(e: EmailModelo): Falha {
   return {
     texto: `Você denunciou como golpe uma mensagem legítima de ${nome}. A conta foi bloqueada pela TI e o trabalho parou por horas até o mal-entendido ser resolvido.`,
     pistas: [`O e-mail vinha de ${e.dominio}, o domínio oficial`, 'Não pedia senha, pagamento nem dados pessoais', 'Desconfiar é bom, mas antes confira os sinais'],
-    verbete: 'phishing',
   };
 }

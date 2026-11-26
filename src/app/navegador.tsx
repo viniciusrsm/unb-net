@@ -3,20 +3,22 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { IconeAlerta, IconeCheck, IconeLupa, IconeNavegador, IconeX } from '@/components/Icones';
-import { Botao, MarcaTexto, PistaLupa, Tela } from '@/components/ui';
-import { planoAtual, proximaTarefa, rotuloHud, useJogo } from '@/game/estado';
+import { Botao, LinkVoltar, MarcaTexto, PistaLupa, Tela, voltarAoMemorando } from '@/components/ui';
+import { compraLiberada, planoAtual, proximaTarefa, rotuloHud, useJogo } from '@/game/estado';
 import type { Compra, Ilustracao } from '@/game/tipos';
+import { tocar } from '@/sons';
 import { cor, MARGEM, sombra, tipo } from '@/theme';
 
 /** 05 Navegador */
 export default function Navegador() {
   const { estado } = useJogo();
-  const atividade = planoAtual(estado)?.atividades.find((a) => a.tipo === 'compra');
-  const compra = atividade?.tipo === 'compra' ? atividade.compra : null;
+  const compra = compraLiberada(estado);
+  const pedidoPendente = !compra && !!planoAtual(estado)?.atividades.some((a) => a.tipo === 'compra');
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)} aba="navegador">
+    <Tela hud={rotuloHud(estado.dia)} aba="navegador">
       <ScrollView contentContainerStyle={estilos.conteudo}>
+        <LinkVoltar rotulo="Memorando" onPress={voltarAoMemorando} />
         {compra ? (
           <Loja compra={compra} />
         ) : (
@@ -24,7 +26,9 @@ export default function Navegador() {
             <IconeNavegador size={40} color={cor.linha} />
             <Text style={[tipo.subtitulo, { color: cor.tinta, textAlign: 'center' }]}>Nenhuma página aberta</Text>
             <Text style={[tipo.pequeno, { color: cor.texto2, textAlign: 'center' }]}>
-              Hoje ninguém pediu compras. O navegador fica fechado: menos abas abertas, menos chances de cair em golpe.
+              {pedidoPendente
+                ? 'Há um pedido de compra esperando na caixa de entrada. Leia e confie no e-mail para abrir as lojas.'
+                : 'Hoje ninguém pediu compras. O navegador fica fechado: menos abas abertas, menos chances de cair em golpe.'}
             </Text>
           </View>
         )}
@@ -48,6 +52,7 @@ function Loja({ compra }: { compra: Compra }) {
       despachar({ tipo: 'falhar', falha: loja.falha });
       router.replace('/desligado');
     } else {
+      tocar('acerto');
       despachar({ tipo: 'concluirAtividade', chave, loja: loja.id, minutos: 3 });
     }
   };
@@ -73,7 +78,7 @@ function Loja({ compra }: { compra: Compra }) {
           <Botao
             tipo="escuro"
             titulo={proxima ? proxima.rotulo : 'Voltar ao memorando'}
-            onPress={() => router.replace(proxima ? proxima.rota : '/briefing')}
+            onPress={() => (proxima ? router.replace(proxima.rota) : voltarAoMemorando())}
           />
         </View>
       ) : (

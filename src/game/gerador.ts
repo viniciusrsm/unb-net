@@ -121,6 +121,7 @@ function gerarCompra(produtoId?: string): { compra: Compra; email: EmailModelo }
 
   const lojas = embaralhar([lojaOk, lojaCara, lojaFalsa]).map((l, i) => ({ ...l, id: `loja${i + 1}`, rotulo: `Loja ${i + 1}` }));
 
+  const idEmail = `pedido-${produto.id}`;
   const compra: Compra = {
     id: produto.id,
     solicitante: quem.nome,
@@ -130,10 +131,11 @@ function gerarCompra(produtoId?: string): { compra: Compra; email: EmailModelo }
     quantidade: qtd,
     limite: reais(limite),
     lojas,
+    emailPedido: idEmail,
   };
 
   const email: EmailModelo = {
-    id: `pedido-${produto.id}`,
+    id: idEmail,
     tema: 'lojas',
     remetente: `${quem.nome}, ${quem.setor}`,
     remetenteCompleto: `${quem.nome}, ${quem.setor}`,
