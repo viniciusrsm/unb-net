@@ -37,8 +37,12 @@ export type VerbeteId =
   | 'backup'
   | 'incidentes';
 
-/** O que aparece na tela "Desligado". */
-export type Falha = { texto: string; pistas: string[]; verbete: VerbeteId };
+/**
+ * O que aparece na tela "Desligado".
+ * Sem `verbete`, o erro não foi cair num golpe (ex.: denunciar uma mensagem legítima):
+ * a tela só explica por que era real, sem sugerir o manual.
+ */
+export type Falha = { texto: string; pistas: string[]; verbete?: VerbeteId };
 
 export type Email = {
   id: string;

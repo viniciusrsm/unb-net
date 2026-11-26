@@ -16,7 +16,7 @@ export default function Desligado() {
   if (!snap) return <Redirect href="/" />;
 
   const { falha, dia, minutos } = snap;
-  const verbete = buscarVerbete(falha.verbete);
+  const verbete = falha.verbete ? buscarVerbete(falha.verbete) : null;
 
   return (
     <Tela hud={rotuloHud(dia)}>
@@ -36,7 +36,9 @@ export default function Desligado() {
         </Papel>
 
         <View style={{ gap: 8, paddingTop: 22 }}>
-          <Text style={[tipo.subtitulo, { color: cor.marcaTexto }]}>O que você deixou passar</Text>
+          <Text style={[tipo.subtitulo, { color: cor.marcaTexto }]}>
+            {verbete ? 'O que você deixou passar' : 'Por que a mensagem era legítima'}
+          </Text>
           {falha.pistas.map((p) => (
             <ItemLista key={p} texto={p} corTexto={cor.formulario} />
           ))}
@@ -44,12 +46,14 @@ export default function Desligado() {
 
         <View style={{ flexGrow: 1, minHeight: 12 }} />
 
+        {verbete ? (
+          <Botao
+            titulo={`Ler no manual: ${verbete.chip}`}
+            onPress={() => router.push(`/manual?modo=leitura&verbete=${verbete.id}`)}
+          />
+        ) : null}
         <Botao
-          titulo={`Ler no manual: ${verbete.chip}`}
-          onPress={() => router.push(`/manual?modo=leitura&verbete=${falha.verbete}`)}
-        />
-        <Botao
-          tipo="secundario"
+          tipo={verbete ? 'secundario' : 'primario'}
           titulo={`Repetir ${NOME_DIA[dia]}`}
           onPress={() => {
             repetirDia();
