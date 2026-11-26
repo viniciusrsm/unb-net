@@ -8,6 +8,7 @@ import { Botao, LinkVoltar, Tela, voltarAoMemorando } from '@/components/ui';
 import { ESCOLHAS, FINAIS } from '@/game/conteudo/atividades';
 import { rotuloHud, useJogo } from '@/game/estado';
 import type { Escolha } from '@/game/tipos';
+import { tocar } from '@/sons';
 import { cor, MARGEM, tipo } from '@/theme';
 
 /**
@@ -37,6 +38,7 @@ function Conteudo({ escolha }: { escolha: Escolha }) {
       router.replace('/desligado');
       return;
     }
+    tocar('acerto');
     despachar({ tipo: 'concluirAtividade', chave });
     if (escolha.final) router.replace('/concluido');
   };

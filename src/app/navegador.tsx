@@ -6,6 +6,7 @@ import { IconeAlerta, IconeCheck, IconeLupa, IconeNavegador, IconeX } from '@/co
 import { Botao, LinkVoltar, MarcaTexto, PistaLupa, Tela, voltarAoMemorando } from '@/components/ui';
 import { planoAtual, proximaTarefa, rotuloHud, useJogo } from '@/game/estado';
 import type { Compra, Ilustracao } from '@/game/tipos';
+import { tocar } from '@/sons';
 import { cor, MARGEM, sombra, tipo } from '@/theme';
 
 /** 05 Navegador */
@@ -49,6 +50,7 @@ function Loja({ compra }: { compra: Compra }) {
       despachar({ tipo: 'falhar', falha: loja.falha });
       router.replace('/desligado');
     } else {
+      tocar('acerto');
       despachar({ tipo: 'concluirAtividade', chave, loja: loja.id, minutos: 3 });
     }
   };

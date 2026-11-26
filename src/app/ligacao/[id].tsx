@@ -7,6 +7,7 @@ import { Botao, LinkVoltar, Tela, voltarAoMemorando } from '@/components/ui';
 import { LIGACOES } from '@/game/conteudo/atividades';
 import { rotuloHud, useJogo } from '@/game/estado';
 import type { Fala, Ligacao } from '@/game/tipos';
+import { tocar } from '@/sons';
 import { cor, MARGEM, sombra, tipo } from '@/theme';
 
 /** Ligação: a conversa aparece aos poucos e, no fim, você decide o que responder. */
@@ -50,6 +51,7 @@ function Conteudo({ ligacao }: { ligacao: Ligacao }) {
       router.replace('/desligado');
       return;
     }
+    tocar('acerto');
     despachar({ tipo: 'concluirAtividade', chave, minutos: 4 });
   };
 

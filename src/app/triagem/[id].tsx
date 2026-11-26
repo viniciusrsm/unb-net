@@ -7,6 +7,7 @@ import { Botao, LinkVoltar, Papel, Tela, voltarAoMemorando } from '@/components/
 import { TRIAGENS } from '@/game/conteudo/atividades';
 import { planoAtual, rotuloHud, useJogo } from '@/game/estado';
 import type { ItemTriagem, Triagem } from '@/game/tipos';
+import { tocar } from '@/sons';
 import { cor, fonte, MARGEM, tipo } from '@/theme';
 
 /** Triagem: classificar vários itens de uma vez. Um erro já conta. */
@@ -27,7 +28,10 @@ function Conteudo({ triagem, itens }: { triagem: Triagem; itens: ItemTriagem[] }
   const [lupa, setLupa] = useState(false);
   const completas = respostas.every((r) => r !== null);
 
-  const marcar = (i: number, ok: boolean) => setRespostas((r) => r.map((x, j) => (j === i ? ok : x)));
+  const marcar = (i: number, ok: boolean) => {
+    if (respostas[i] !== ok) tocar('toque');
+    setRespostas((r) => r.map((x, j) => (j === i ? ok : x)));
+  };
 
   const confirmar = () => {
     const erradas = itens.filter((it, i) => respostas[i] !== it.ok);
@@ -43,6 +47,7 @@ function Conteudo({ triagem, itens }: { triagem: Triagem; itens: ItemTriagem[] }
       router.replace('/desligado');
       return;
     }
+    tocar('acerto');
     despachar({ tipo: 'concluirAtividade', chave, minutos: 6 });
   };
 

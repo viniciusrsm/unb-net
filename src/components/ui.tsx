@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { planoAtual, useJogo } from '@/game/estado';
+import { tocar } from '@/sons';
 import { cor, MARGEM, sombra, tipo } from '@/theme';
 import { Bonequinho, Furo, IconeCaixa, IconeManual, IconeNavegador, IconeVoltar } from './Icones';
 
@@ -186,6 +187,7 @@ export function ItemLista({ texto, corTexto = cor.tinta }: { texto: string; corT
 export function PistaLupa({ texto, rotacao = -1.2 }: { texto: string; rotacao?: number }) {
   const [entrada] = useState(() => new Animated.Value(0));
   useEffect(() => {
+    tocar('lupa');
     Animated.spring(entrada, { toValue: 1, useNativeDriver: true, friction: 6 }).start();
   }, [entrada]);
   return (
@@ -225,10 +227,13 @@ export function Carimbo({ tipo: t }: { tipo: 'Confiar' | 'Denunciar' }) {
 export function CarimboAnimado({ tipo: t, onFim }: { tipo: 'Confiar' | 'Denunciar'; onFim: () => void }) {
   const [v] = useState(() => new Animated.Value(0));
   useEffect(() => {
+    // O som sai no impacto, quando o carimbo termina de "descer".
+    const impacto = setTimeout(() => tocar('carimbo'), 150);
     Animated.sequence([
       Animated.timing(v, { toValue: 1, duration: 180, useNativeDriver: true }),
       Animated.delay(750),
     ]).start(() => onFim());
+    return () => clearTimeout(impacto);
   }, [v, onFim]);
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>

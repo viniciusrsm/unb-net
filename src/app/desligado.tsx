@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 
@@ -6,6 +6,7 @@ import { Botao, Carimbo, ItemLista, Papel, Tela, voltarAoMemorando } from '@/com
 import { verbete as buscarVerbete } from '@/game/conteudo/verbetes';
 import { relogio, rotuloHud, useJogo } from '@/game/estado';
 import { NOME_DIA } from '@/game/tipos';
+import { tocar } from '@/sons';
 import { cor, MARGEM, tipo } from '@/theme';
 
 /** 06 Desligado */
@@ -13,6 +14,9 @@ export default function Desligado() {
   const { estado, repetirDia } = useJogo();
   // Guarda a falha ao abrir a tela: "Repetir" limpa o estado antes da navegação terminar.
   const [snap] = useState(() => (estado.falha ? { falha: estado.falha, dia: estado.dia, minutos: estado.minutos } : null));
+  useEffect(() => {
+    if (snap) tocar('erro');
+  }, [snap]);
   if (!snap) return <Redirect href="/" />;
 
   const { falha, dia, minutos } = snap;

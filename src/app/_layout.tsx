@@ -6,6 +6,7 @@ import { BigShouldersDisplay_700Bold, BigShouldersDisplay_900Black } from '@expo
 import { IBMPlexSans_400Regular, IBMPlexSans_500Medium, IBMPlexSans_600SemiBold, useFonts } from '@expo-google-fonts/ibm-plex-sans';
 
 import { JogoProvider } from '@/game/estado';
+import { prepararSons } from '@/sons';
 import { cor } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -29,6 +30,10 @@ export default function RootLayout() {
   useEffect(() => {
     if (carregou || erro) SplashScreen.hideAsync();
   }, [carregou, erro]);
+
+  useEffect(() => {
+    prepararSons();
+  }, []);
 
   if (!carregou && !erro) return null;
 
