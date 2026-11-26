@@ -1,12 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
-import { IconeCadeado } from '@/components/Icones';
 import { ItemLista, LinkVoltar, Papel, Tela, voltarAoMemorando } from '@/components/ui';
 import { VERBETES } from '@/game/conteudo/verbetes';
-import { rotuloHud, temasLiberados, useJogo } from '@/game/estado';
-import { NOME_DIA, type VerbeteId } from '@/game/tipos';
+import { rotuloHud, useJogo } from '@/game/estado';
+import type { VerbeteId } from '@/game/tipos';
 import { cor, MARGEM, tipo } from '@/theme';
 
 /** 07 Manual */
@@ -15,13 +14,20 @@ export default function Manual() {
   const { estado, despachar } = useJogo();
   const leitura = modo === 'leitura' || !estado.iniciado;
 
-  // Durante a semana, cada verbete libera quando o tema aparece num dia.
-  // Fora do jogo (início, fim, derrota) o manual fica todo aberto para consulta.
-  const liberados = temasLiberados(estado);
-  const liberado = (id: VerbeteId) => leitura || liberados.has(id);
-
-  const [atual, setAtual] = useState<VerbeteId>(inicial && liberado(inicial) ? inicial : 'phishing');
+  // Todos os verbetes ficam abertos desde o início; `verbete` na rota escolhe a aba.
+  const [atual, setAtual] = useState<VerbeteId>(
+    inicial && VERBETES.some((v) => v.id === inicial) ? inicial : 'phishing',
+  );
   const verbete = VERBETES.find((v) => v.id === atual) ?? VERBETES[0];
+
+  // Rola a fileira de abas até a aba aberta (ex.: "Engenharia social" não cabe na tela).
+  const chips = useRef<ScrollViewInstance>(null);
+  const posicoes = useRef<Partial<Record<VerbeteId, number>>>({});
+  const rolouInicial = useRef(false);
+  const mostrarChip = (id: VerbeteId, animado: boolean) => {
+    const x = posicoes.current[id];
+    if (x !== undefined) chips.current?.scrollTo({ x: Math.max(0, x - MARGEM), animated: animado });
+  };
 
   useEffect(() => {
     despachar({ tipo: 'lerVerbete', id: atual });
@@ -38,24 +44,34 @@ export default function Manual() {
           )}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={estilos.chips}>
+        <ScrollView
+          ref={chips}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={estilos.chips}
+          accessibilityRole="tablist"
+        >
           {VERBETES.map((v) => {
             const ativo = v.id === atual;
-            const aberto = liberado(v.id);
             return (
-              // Verbetes bloqueados mostram o cadeado: liberam quando o tema aparecer na semana.
               <Pressable
                 key={v.id}
                 accessibilityRole="tab"
-                accessibilityState={{ selected: ativo, disabled: !aberto }}
-                disabled={!aberto}
-                onPress={() => setAtual(v.id)}
+                accessibilityState={{ selected: ativo }}
+                onLayout={(e) => {
+                  posicoes.current[v.id] = e.nativeEvent.layout.x;
+                  if (ativo && !rolouInicial.current) {
+                    rolouInicial.current = true;
+                    mostrarChip(v.id, false);
+                  }
+                }}
+                onPress={() => {
+                  setAtual(v.id);
+                  mostrarChip(v.id, true);
+                }}
                 style={[estilos.chip, ativo ? { backgroundColor: cor.marcaTexto, borderColor: cor.marcaTexto } : null]}
               >
-                {!aberto ? <IconeCadeado /> : null}
-                <Text style={[tipo.pequenoDestaque, { color: ativo ? cor.tinta : aberto ? cor.formulario : cor.linha }]}>
-                  {v.chip}
-                </Text>
+                <Text style={[tipo.pequenoDestaque, { color: ativo ? cor.tinta : cor.formulario }]}>{v.chip}</Text>
               </Pressable>
             );
           })}
@@ -63,11 +79,7 @@ export default function Manual() {
 
         <View style={{ paddingHorizontal: MARGEM, gap: 14, flex: 1 }}>
           <View style={{ gap: 2 }}>
-            <Text style={[tipo.pequeno, { color: cor.linha }]}>
-              {!leitura && liberados.get(verbete.id)
-                ? `Verbete liberado na ${NOME_DIA[liberados.get(verbete.id)!]}`
-                : 'Verbete do manual de segurança'}
-            </Text>
+            <Text style={[tipo.pequeno, { color: cor.linha }]}>Verbete do manual de segurança</Text>
             <Text style={[tipo.displayG, { color: cor.formulario }]}>{verbete.titulo}</Text>
           </View>
 

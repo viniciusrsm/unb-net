@@ -324,11 +324,3 @@ export function naoLidos(estado: Estado) {
   return emailsDoDia(estado).filter((e) => !e.jaLido && !estado.emailsAbertos.includes(e.id)).length;
 }
 
-/** Temas que já apareceram nesta semana até o dia atual, com o dia em que apareceram. */
-export function temasLiberados(estado: Estado): Map<VerbeteId, Dia> {
-  const mapa = new Map<VerbeteId, Dia>([['phishing', 'seg']]);
-  for (const d of DIAS.slice(0, indiceDia(estado.dia) + 1)) {
-    for (const t of estado.planos[d]?.temas ?? []) if (!mapa.has(t)) mapa.set(t, d);
-  }
-  return mapa;
-}
