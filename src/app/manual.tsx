@@ -28,7 +28,7 @@ export default function Manual() {
   }, [atual, despachar]);
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)} aba={leitura ? undefined : 'manual'}>
+    <Tela hud={rotuloHud(estado.dia)} aba={leitura ? undefined : 'manual'}>
       <ScrollView contentContainerStyle={{ paddingVertical: 16, gap: 14, flexGrow: 1 }}>
         {leitura ? (
           <View style={{ paddingHorizontal: MARGEM }}>

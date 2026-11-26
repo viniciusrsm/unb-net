@@ -19,7 +19,7 @@ export default function Desligado() {
   const verbete = buscarVerbete(falha.verbete);
 
   return (
-    <Tela hud={rotuloHud(dia, minutos)}>
+    <Tela hud={rotuloHud(dia)}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, gap: 12, paddingHorizontal: MARGEM, paddingTop: 16, paddingBottom: 28 }}>
         <Papel style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, gap: 12 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>

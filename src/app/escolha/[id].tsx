@@ -48,7 +48,7 @@ function Conteudo({ escolha }: { escolha: Escolha }) {
     : 'Escolha uma opção';
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
+    <Tela hud={rotuloHud(estado.dia)}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, gap: 16, paddingBottom: 36, paddingTop: escolha.alerta ? 0 : 16 }}>
         {escolha.alerta ? (
           <View style={estilos.alerta}>

@@ -36,7 +36,7 @@ export default function Briefing() {
       };
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
+    <Tela hud={rotuloHud(estado.dia)}>
       <ScrollView contentContainerStyle={estilos.conteudo}>
         <View style={{ gap: 6 }}>
           <Text style={[tipo.pequenoDestaque, { color: cor.marcaTexto }]}>

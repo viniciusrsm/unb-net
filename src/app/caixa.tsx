@@ -20,7 +20,7 @@ export default function Caixa() {
     router.push({ pathname: '/email/[id]', params: lupa ? { id: email.id, lupa: '1' } : { id: email.id } });
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)} aba="caixa">
+    <Tela hud={rotuloHud(estado.dia)} aba="caixa">
       <ScrollView contentContainerStyle={estilos.conteudo}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
           <Text style={[tipo.displayM, { color: cor.formulario, flex: 1 }]}>Caixa de entrada</Text>

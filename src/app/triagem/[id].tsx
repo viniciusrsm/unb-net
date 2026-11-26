@@ -47,7 +47,7 @@ function Conteudo({ triagem, itens }: { triagem: Triagem; itens: ItemTriagem[] }
   };
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
+    <Tela hud={rotuloHud(estado.dia)}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, gap: 14, padding: MARGEM, paddingBottom: 36 }}>
         <LinkVoltar rotulo="Memorando" onPress={() => router.replace('/briefing')} />
         <Text style={[tipo.displayM, { color: cor.formulario }]}>{triagem.titulo}</Text>

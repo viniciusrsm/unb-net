@@ -6,9 +6,10 @@ import { ESCOLHAS, FINAIS, LIGACOES, TRIAGENS } from './conteudo/atividades';
 import { falhaDenunciaFalsa } from './conteudo/emails';
 import { gerarPlano, idsDoPlano } from './gerador';
 import {
-  ABREV_DIA,
   DIAS,
   INICIO_DIA,
+  NOME_DIA,
+  capitalizar,
   chaveAtividade,
   indiceDia,
   type AtividadePlano,
@@ -243,8 +244,8 @@ export function relogio(minutos: number) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-export function rotuloHud(dia: Dia, minutos: number) {
-  return `${ABREV_DIA[dia]}, ${relogio(minutos)}`;
+export function rotuloHud(dia: Dia) {
+  return capitalizar(NOME_DIA[dia]);
 }
 
 export const planoAtual = (estado: Estado) => estado.planos[estado.dia];

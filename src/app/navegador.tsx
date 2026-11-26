@@ -15,7 +15,7 @@ export default function Navegador() {
   const compra = atividade?.tipo === 'compra' ? atividade.compra : null;
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)} aba="navegador">
+    <Tela hud={rotuloHud(estado.dia)} aba="navegador">
       <ScrollView contentContainerStyle={estilos.conteudo}>
         {compra ? (
           <Loja compra={compra} />

@@ -34,7 +34,7 @@ export default function EmailTela() {
 
   if (!email) {
     return (
-      <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
+      <Tela hud={rotuloHud(estado.dia)}>
         <View style={{ padding: MARGEM }}>
           <LinkVoltar rotulo="Caixa de entrada" onPress={() => router.back()} />
         </View>
@@ -61,7 +61,7 @@ export default function EmailTela() {
   ) : null;
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)} rodape={rodape}>
+    <Tela hud={rotuloHud(estado.dia)} rodape={rodape}>
       <ScrollView contentContainerStyle={estilos.conteudo}>
         <LinkVoltar rotulo="Caixa de entrada" onPress={() => router.back()} />
 

@@ -61,7 +61,7 @@ function Conteudo({ ligacao }: { ligacao: Ligacao }) {
     .join('');
 
   return (
-    <Tela hud={rotuloHud(estado.dia, estado.minutos)}>
+    <Tela hud={rotuloHud(estado.dia)}>
       <ScrollView
         ref={scroll}
         onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
