@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 
-import { IconeVoltar } from '@/components/Icones';
+import { IconeCadeado, IconeVoltar } from '@/components/Icones';
 import { Botao, Papel, Tela } from '@/components/ui';
 import {
   descreverTarefa,
@@ -11,6 +11,7 @@ import {
   rotaDaTarefa,
   rotuloHud,
   tarefaFeita,
+  tarefaLiberada,
   useJogo,
 } from '@/game/estado';
 import { ABREV_DIA, DIAS, INICIO_DIA, NOME_DIA, capitalizar, chaveAtividade, indiceDia } from '@/game/tipos';
@@ -67,15 +68,23 @@ export default function Briefing() {
             {plano.atividades.map((a) => {
               const { titulo, detalhe } = descreverTarefa(estado, a);
               const ok = tarefaFeita(estado, a);
+              const liberada = tarefaLiberada(estado, a);
               // Cada tarefa abre a sua área; o memorando fica embaixo na pilha para voltar.
               return (
                 <Pressable
                   key={chaveAtividade(a)}
                   accessibilityRole="button"
-                  accessibilityState={{ checked: ok }}
-                  accessibilityHint={ok ? 'Tarefa feita. Toque para rever.' : 'Toque para começar esta tarefa.'}
+                  accessibilityState={{ checked: ok, disabled: !liberada }}
+                  accessibilityHint={
+                    !liberada ? 'Tarefa trancada.' : ok ? 'Tarefa feita. Toque para rever.' : 'Toque para começar esta tarefa.'
+                  }
+                  disabled={!liberada}
                   onPress={() => router.push(rotaDaTarefa(a))}
-                  style={({ pressed }) => [estilos.tarefa, pressed && { backgroundColor: cor.pauta }]}
+                  style={({ pressed }) => [
+                    estilos.tarefa,
+                    pressed && { backgroundColor: cor.pauta },
+                    !liberada && { opacity: 0.55 },
+                  ]}
                 >
                   <View style={[estilos.check, ok && { backgroundColor: cor.tinta }]}>
                     {ok ? <Text style={estilos.checkMarca}>✓</Text> : null}
@@ -90,11 +99,17 @@ export default function Briefing() {
                     >
                       {titulo}
                     </Text>
-                    <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{detalhe}</Text>
+                    <Text style={[tipo.pequeno, { color: cor.texto2 }]}>
+                      {liberada ? detalhe : 'O pedido chega por e-mail: confie nele na caixa de entrada para abrir.'}
+                    </Text>
                   </View>
-                  <View style={{ transform: [{ rotate: '180deg' }], opacity: ok ? 0.4 : 1 }}>
-                    <IconeVoltar color={cor.tinta} />
-                  </View>
+                  {liberada ? (
+                    <View style={{ transform: [{ rotate: '180deg' }], opacity: ok ? 0.4 : 1 }}>
+                      <IconeVoltar color={cor.tinta} />
+                    </View>
+                  ) : (
+                    <IconeCadeado size={18} color={cor.texto2} />
+                  )}
                 </Pressable>
               );
             })}

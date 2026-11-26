@@ -150,6 +150,8 @@ export type Compra = {
   quantidade: number;
   limite: string;
   lojas: Loja[];
+  /** Id do e-mail com o pedido: a compra só abre depois de confiar nele. */
+  emailPedido: string;
 };
 
 export type AtividadePlano =

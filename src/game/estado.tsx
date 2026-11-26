@@ -262,6 +262,20 @@ export function tarefaFeita(estado: Estado, a: AtividadePlano) {
   return a.tipo === 'caixa' ? emailsResolvidos(estado) : estado.concluidas.includes(chaveAtividade(a));
 }
 
+/**
+ * Tarefas encadeadas só abrem depois da anterior: a compra chega por e-mail,
+ * então fica trancada até você abrir o pedido e confiar nele.
+ */
+export function tarefaLiberada(estado: Estado, a: AtividadePlano) {
+  return a.tipo !== 'compra' || estado.decisoes[a.compra.emailPedido] === 'confiar';
+}
+
+/** Compra do dia, se houver e já estiver liberada. */
+export function compraLiberada(estado: Estado) {
+  const a = planoAtual(estado)?.atividades.find((x) => x.tipo === 'compra');
+  return a?.tipo === 'compra' && tarefaLiberada(estado, a) ? a.compra : null;
+}
+
 export function diaConcluido(estado: Estado) {
   return (planoAtual(estado)?.atividades ?? []).every((a) => tarefaFeita(estado, a));
 }
@@ -309,7 +323,7 @@ export function rotaDaTarefa(a: AtividadePlano): Href {
 
 /** Próxima tarefa pendente do dia, ou null se o dia acabou. */
 export function proximaTarefa(estado: Estado): { rota: Href; rotulo: string } | null {
-  const a = (planoAtual(estado)?.atividades ?? []).find((x) => !tarefaFeita(estado, x));
+  const a = (planoAtual(estado)?.atividades ?? []).find((x) => !tarefaFeita(estado, x) && tarefaLiberada(estado, x));
   if (!a) return null;
   let rotulo: string;
   if (a.tipo === 'caixa') rotulo = 'Abrir a caixa de entrada';

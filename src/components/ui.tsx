@@ -3,7 +3,7 @@ import { Animated, Pressable, StyleSheet, Text, View, type StyleProp, type ViewS
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { planoAtual, useJogo } from '@/game/estado';
+import { compraLiberada, useJogo } from '@/game/estado';
 import { tocar } from '@/sons';
 import { cor, MARGEM, sombra, tipo } from '@/theme';
 import { Bonequinho, Furo, IconeCaixa, IconeManual, IconeNavegador, IconeVoltar } from './Icones';
@@ -77,8 +77,8 @@ const ABAS: { app: App; rotulo: string; Icone: typeof IconeCaixa }[] = [
 export function BarraDeAbas({ ativa }: { ativa: App }) {
   const { bottom } = useSafeAreaInsets();
   const { estado } = useJogo();
-  // O navegador só entra na barra nos dias em que há uma compra para fazer.
-  const temCompra = !!planoAtual(estado)?.atividades.some((a) => a.tipo === 'compra');
+  // O navegador só entra na barra quando há uma compra liberada (pedido aceito na caixa).
+  const temCompra = !!compraLiberada(estado);
   const abas = ABAS.filter(({ app }) => app !== 'navegador' || temCompra || ativa === 'navegador');
   return (
     <View style={[estilos.barra, { paddingBottom: Math.max(bottom, 30) }]}>
