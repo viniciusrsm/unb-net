@@ -3,7 +3,7 @@ import { Animated, Pressable, ScrollView, StyleSheet, Text, View, type ScrollVie
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 
 import { Acerto, ListaOpcoes, Lupa, useOpcoesEmbaralhadas } from '@/components/atividade';
-import { Botao, LinkVoltar, Tela } from '@/components/ui';
+import { Botao, LinkVoltar, Tela, voltarAoMemorando } from '@/components/ui';
 import { LIGACOES } from '@/game/conteudo/atividades';
 import { rotuloHud, useJogo } from '@/game/estado';
 import type { Fala, Ligacao } from '@/game/tipos';
@@ -67,7 +67,7 @@ function Conteudo({ ligacao }: { ligacao: Ligacao }) {
         onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
         contentContainerStyle={{ flexGrow: 1, gap: 14, padding: MARGEM, paddingBottom: 36 }}
       >
-        <LinkVoltar rotulo="Memorando" onPress={() => router.replace('/briefing')} />
+        <LinkVoltar rotulo="Memorando" onPress={voltarAoMemorando} />
 
         <View style={estilos.chamada}>
           <View style={estilos.avatar}>

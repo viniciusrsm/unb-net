@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { IconeLupa } from '@/components/Icones';
-import { Botao, Papel, Tela } from '@/components/ui';
+import { Botao, LinkVoltar, Papel, Tela, voltarAoMemorando } from '@/components/ui';
 import { emailsDoDia, emailsResolvidos, naoLidos, proximaTarefa, rotuloHud, useJogo, type Decisao } from '@/game/estado';
 import type { Email } from '@/game/tipos';
 import { cor, MARGEM, tipo } from '@/theme';
@@ -22,6 +22,7 @@ export default function Caixa() {
   return (
     <Tela hud={rotuloHud(estado.dia)} aba="caixa">
       <ScrollView contentContainerStyle={estilos.conteudo}>
+        <LinkVoltar rotulo="Memorando" onPress={voltarAoMemorando} />
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
           <Text style={[tipo.displayM, { color: cor.formulario, flex: 1 }]}>Caixa de entrada</Text>
           <Text style={[tipo.pequenoDestaque, { color: cor.marcaTexto }]}>
@@ -61,7 +62,7 @@ export default function Caixa() {
             {proxima ? (
               <Botao titulo={proxima.rotulo} onPress={() => router.replace(proxima.rota)} />
             ) : (
-              <Botao titulo="Voltar ao memorando" onPress={() => router.replace('/briefing')} />
+              <Botao titulo="Voltar ao memorando" onPress={voltarAoMemorando} />
             )}
           </View>
         ) : null}

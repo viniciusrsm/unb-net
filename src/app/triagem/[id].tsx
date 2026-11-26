@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 
 import { Acerto, Lupa } from '@/components/atividade';
-import { Botao, LinkVoltar, Papel, Tela } from '@/components/ui';
+import { Botao, LinkVoltar, Papel, Tela, voltarAoMemorando } from '@/components/ui';
 import { TRIAGENS } from '@/game/conteudo/atividades';
 import { planoAtual, rotuloHud, useJogo } from '@/game/estado';
 import type { ItemTriagem, Triagem } from '@/game/tipos';
@@ -49,7 +49,7 @@ function Conteudo({ triagem, itens }: { triagem: Triagem; itens: ItemTriagem[] }
   return (
     <Tela hud={rotuloHud(estado.dia)}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, gap: 14, padding: MARGEM, paddingBottom: 36 }}>
-        <LinkVoltar rotulo="Memorando" onPress={() => router.replace('/briefing')} />
+        <LinkVoltar rotulo="Memorando" onPress={voltarAoMemorando} />
         <Text style={[tipo.displayM, { color: cor.formulario }]}>{triagem.titulo}</Text>
         <Text style={[tipo.corpo, { color: cor.formulario }]}>{triagem.enunciado}</Text>
 

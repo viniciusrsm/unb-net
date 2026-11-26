@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { IconeAlerta, IconeCheck, IconeLupa, IconeNavegador, IconeX } from '@/components/Icones';
-import { Botao, MarcaTexto, PistaLupa, Tela } from '@/components/ui';
+import { Botao, LinkVoltar, MarcaTexto, PistaLupa, Tela, voltarAoMemorando } from '@/components/ui';
 import { planoAtual, proximaTarefa, rotuloHud, useJogo } from '@/game/estado';
 import type { Compra, Ilustracao } from '@/game/tipos';
 import { cor, MARGEM, sombra, tipo } from '@/theme';
@@ -17,6 +17,7 @@ export default function Navegador() {
   return (
     <Tela hud={rotuloHud(estado.dia)} aba="navegador">
       <ScrollView contentContainerStyle={estilos.conteudo}>
+        <LinkVoltar rotulo="Memorando" onPress={voltarAoMemorando} />
         {compra ? (
           <Loja compra={compra} />
         ) : (
@@ -73,7 +74,7 @@ function Loja({ compra }: { compra: Compra }) {
           <Botao
             tipo="escuro"
             titulo={proxima ? proxima.rotulo : 'Voltar ao memorando'}
-            onPress={() => router.replace(proxima ? proxima.rota : '/briefing')}
+            onPress={() => (proxima ? router.replace(proxima.rota) : voltarAoMemorando())}
           />
         </View>
       ) : (

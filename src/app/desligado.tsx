@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 
-import { Botao, Carimbo, ItemLista, Papel, Tela } from '@/components/ui';
+import { Botao, Carimbo, ItemLista, Papel, Tela, voltarAoMemorando } from '@/components/ui';
 import { verbete as buscarVerbete } from '@/game/conteudo/verbetes';
 import { relogio, rotuloHud, useJogo } from '@/game/estado';
 import { NOME_DIA } from '@/game/tipos';
@@ -53,7 +53,7 @@ export default function Desligado() {
           titulo={`Repetir ${NOME_DIA[dia]}`}
           onPress={() => {
             repetirDia();
-            router.replace('/briefing');
+            voltarAoMemorando();
           }}
         />
         <Text style={[tipo.pequeno, { color: cor.linha, textAlign: 'center' }]}>

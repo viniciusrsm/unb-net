@@ -1,13 +1,14 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 
+import { IconeVoltar } from '@/components/Icones';
 import { Botao, Papel, Tela } from '@/components/ui';
 import {
   descreverTarefa,
   diaConcluido,
   planoAtual,
-  proximaTarefa,
   relogio,
+  rotaDaTarefa,
   rotuloHud,
   tarefaFeita,
   useJogo,
@@ -23,17 +24,6 @@ export default function Briefing() {
 
   const idx = indiceDia(estado.dia);
   const feito = diaConcluido(estado);
-  const proxima = proximaTarefa(estado);
-
-  const acao = proxima
-    ? { titulo: proxima.rotulo, onPress: () => router.replace(proxima.rota) }
-    : {
-        titulo: `Encerrar ${NOME_DIA[estado.dia]}`,
-        onPress: () => {
-          avancarDia();
-          router.replace('/briefing');
-        },
-      };
 
   return (
     <Tela hud={rotuloHud(estado.dia)}>
@@ -77,8 +67,16 @@ export default function Briefing() {
             {plano.atividades.map((a) => {
               const { titulo, detalhe } = descreverTarefa(estado, a);
               const ok = tarefaFeita(estado, a);
+              // Cada tarefa abre a sua área; o memorando fica embaixo na pilha para voltar.
               return (
-                <View key={chaveAtividade(a)} style={estilos.tarefa}>
+                <Pressable
+                  key={chaveAtividade(a)}
+                  accessibilityRole="button"
+                  accessibilityState={{ checked: ok }}
+                  accessibilityHint={ok ? 'Tarefa feita. Toque para rever.' : 'Toque para começar esta tarefa.'}
+                  onPress={() => router.push(rotaDaTarefa(a))}
+                  style={({ pressed }) => [estilos.tarefa, pressed && { backgroundColor: cor.pauta }]}
+                >
                   <View style={[estilos.check, ok && { backgroundColor: cor.tinta }]}>
                     {ok ? <Text style={estilos.checkMarca}>✓</Text> : null}
                   </View>
@@ -94,7 +92,10 @@ export default function Briefing() {
                     </Text>
                     <Text style={[tipo.pequeno, { color: cor.texto2 }]}>{detalhe}</Text>
                   </View>
-                </View>
+                  <View style={{ transform: [{ rotate: '180deg' }], opacity: ok ? 0.4 : 1 }}>
+                    <IconeVoltar color={cor.tinta} />
+                  </View>
+                </Pressable>
               );
             })}
           </View>
@@ -109,7 +110,19 @@ export default function Briefing() {
           </Text>
         </View>
 
-        <Botao titulo={acao.titulo} onPress={acao.onPress} />
+        {feito ? (
+          <Botao
+            titulo={`Encerrar ${NOME_DIA[estado.dia]}`}
+            onPress={() => {
+              avancarDia();
+              router.replace('/briefing');
+            }}
+          />
+        ) : (
+          <Text style={[tipo.pequeno, { color: cor.linha, textAlign: 'center' }]}>
+            Toque numa tarefa do memorando para começar.
+          </Text>
+        )}
       </ScrollView>
     </Tela>
   );
@@ -124,6 +137,8 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginHorizontal: -20,
     borderTopWidth: 1,
     borderTopColor: cor.linha,
   },

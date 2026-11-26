@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { IconeCadeado } from '@/components/Icones';
-import { ItemLista, LinkVoltar, Papel, Tela } from '@/components/ui';
+import { ItemLista, LinkVoltar, Papel, Tela, voltarAoMemorando } from '@/components/ui';
 import { VERBETES } from '@/game/conteudo/verbetes';
 import { rotuloHud, temasLiberados, useJogo } from '@/game/estado';
 import { NOME_DIA, type VerbeteId } from '@/game/tipos';
@@ -30,11 +30,13 @@ export default function Manual() {
   return (
     <Tela hud={rotuloHud(estado.dia)} aba={leitura ? undefined : 'manual'}>
       <ScrollView contentContainerStyle={{ paddingVertical: 16, gap: 14, flexGrow: 1 }}>
-        {leitura ? (
-          <View style={{ paddingHorizontal: MARGEM }}>
+        <View style={{ paddingHorizontal: MARGEM }}>
+          {leitura ? (
             <LinkVoltar rotulo="Voltar" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
-          </View>
-        ) : null}
+          ) : (
+            <LinkVoltar rotulo="Memorando" onPress={voltarAoMemorando} />
+          )}
+        </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={estilos.chips}>
           {VERBETES.map((v) => {

@@ -135,6 +135,9 @@ export function Tela({
   );
 }
 
+/** Volta ao memorando que está embaixo na pilha (ou o abre, se não estiver lá). */
+export const voltarAoMemorando = () => router.dismissTo('/briefing');
+
 export function LinkVoltar({ rotulo, onPress }: { rotulo: string; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="link" onPress={onPress} hitSlop={10} style={estilos.voltar}>
