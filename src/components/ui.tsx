@@ -3,6 +3,7 @@ import { Animated, Pressable, StyleSheet, Text, View, type StyleProp, type ViewS
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { planoAtual, useJogo } from '@/game/estado';
 import { cor, MARGEM, sombra, tipo } from '@/theme';
 import { Bonequinho, Furo, IconeCaixa, IconeManual, IconeNavegador, IconeVoltar } from './Icones';
 
@@ -74,9 +75,13 @@ const ABAS: { app: App; rotulo: string; Icone: typeof IconeCaixa }[] = [
 
 export function BarraDeAbas({ ativa }: { ativa: App }) {
   const { bottom } = useSafeAreaInsets();
+  const { estado } = useJogo();
+  // O navegador só entra na barra nos dias em que há uma compra para fazer.
+  const temCompra = !!planoAtual(estado)?.atividades.some((a) => a.tipo === 'compra');
+  const abas = ABAS.filter(({ app }) => app !== 'navegador' || temCompra || ativa === 'navegador');
   return (
     <View style={[estilos.barra, { paddingBottom: Math.max(bottom, 30) }]}>
-      {ABAS.map(({ app, rotulo, Icone }) => {
+      {abas.map(({ app, rotulo, Icone }) => {
         const ativo = app === ativa;
         return (
           <Pressable
@@ -348,7 +353,7 @@ const estilos = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: cor.formulario,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     paddingHorizontal: 28,
   },
   aba: { width: 84, alignItems: 'center', gap: 6, paddingBottom: 4 },
